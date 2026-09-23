@@ -3,16 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Starsounds · Binaural Beat Designer</title>
+<title>Binaural Beat Designer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   color-scheme:dark;
-  /* Everything eases slowly: the app should feel gentle */
-  --calm:1.1s cubic-bezier(.35,0,.25,1);
-  --calm-slow:1.6s cubic-bezier(.35,0,.25,1);
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
@@ -20,7 +17,7 @@
   --deep:#0B0920;
   --glass:rgba(160,150,255,.055);
   --glass-edge:rgba(190,180,255,.14);
-  --ink:#9C97C8;   /* all light text uses the soft purple of the tone readouts */
+  --ink:#ECE8FF;
   --muted:#9C97C8;
   --faint:rgba(200,190,255,.10);
   --aura:#B69CFF;
@@ -45,9 +42,8 @@ body{
 #stars i{position:absolute;border-radius:50%;background:#fff;opacity:var(--o)}
 body.playing #stars i.tw{animation:twinkle var(--d) ease-in-out infinite alternate}
 @keyframes twinkle{from{opacity:var(--o)}to{opacity:.05}}
-.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:32px 22px 40px}
-header{display:flex;align-items:center;justify-content:flex-end;gap:20px;flex-wrap:wrap}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:36px 22px 48px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
 h1{
   font-family:var(--display);font-weight:300;font-size:clamp(2.2rem,4.5vw,3.3rem);line-height:1.05;margin:0;letter-spacing:.01em;
   background:linear-gradient(100deg,#FFF6FB 5%,#E2D6FF 40%,#FFC9E3 70%,#BFF3F5 95%);-webkit-background-clip:text;background-clip:text;color:transparent;
@@ -55,19 +51,7 @@ h1{
 }
 .hint{font-size:.9rem;color:var(--muted);margin:10px 0 0;max-width:64ch}
 .hint.warn{color:#FF9BB5}
-/* Under the field: one slot that shows Presets normally and the Curve slider while a reference
-   layer is active, with Play always at the right */
-.fieldbar{margin-top:16px}
-/* Top bar: logo on the left, Presets and Play on the right */
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 0 22px}
-.ctrls{display:flex;align-items:center;gap:12px}
-/* Logo: top left on desktop, between Presets and Play on narrow screens. It steps back while a
-   reference layer is showing. */
-.brand{width:190px;margin:0 0 0 2px;transition:opacity var(--calm-slow)}
-.brand .logo-svg{display:block;width:100%;height:auto}
-body.refs-on .brand{opacity:0}
-.preset-panel{display:flex;align-items:center;gap:14px;transition:opacity var(--calm-slow),visibility var(--calm-slow)}
-.preset-panel.away{opacity:0;visibility:hidden}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;position:relative}
 .presets{position:relative}
 #presetBtn{padding:10px 20px}
 .preset-menu{
@@ -76,8 +60,6 @@ body.refs-on .brand{opacity:0}
   box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 40px rgba(182,156,255,.12);backdrop-filter:blur(12px);
 }
 .preset-menu[hidden]{display:none}
-.preset-menu:not([hidden]){animation:menuIn .45s cubic-bezier(.2,.7,.2,1)}
-@keyframes menuIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .preset-menu{max-height:min(70vh,560px);overflow-y:auto;overscroll-behavior:contain}
 .pgroup{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:12px 12px 4px;opacity:.8}
 .pgroup:first-child{padding-top:6px}
@@ -85,7 +67,7 @@ body.refs-on .brand{opacity:0}
 .preset:hover,.preset:focus-visible{background:rgba(182,156,255,.12);outline:none}
 .pname{font-size:.95rem;font-weight:500;color:var(--ink)}
 .pmeta{font-size:.72rem;color:var(--muted);font-weight:300}
-.preset-status{font-size:.8rem;color:var(--muted)}
+.preset-status{flex-basis:100%;text-align:right;font-size:.8rem;color:var(--muted);min-height:1.2em}
 .linkish{border:none;background:none;padding:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px;font-size:inherit;font-weight:500}
 button{font:inherit;font-weight:500;font-size:.95rem;padding:8px 18px;border-radius:999px;border:1px solid var(--glass-edge);background:var(--glass);color:var(--ink);cursor:pointer;transition:border-color .2s,box-shadow .2s}
 button:hover{border-color:rgba(200,190,255,.35)}
@@ -97,7 +79,7 @@ button.primary{
 body.playing button.primary{animation:breathe 5s ease-in-out infinite}
 @keyframes breathe{0%,100%{box-shadow:0 0 22px rgba(228,219,255,.35),0 0 50px rgba(255,201,227,.15)}50%{box-shadow:0 0 36px rgba(228,219,255,.6),0 0 90px rgba(191,243,245,.3)}}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--tide);outline-offset:3px}
-.body{display:flex;gap:26px;align-items:flex-start}
+.body{display:flex;gap:26px;align-items:flex-start;margin-top:28px}
 /* The field and the mixer share one height: the field is square and the mixer's sliders stretch to match it */
 .pad-wrap{flex:1 1 520px;max-width:600px;min-width:0}
 .pad{
@@ -111,20 +93,20 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 }
 .band{position:absolute;top:0;bottom:0;pointer-events:none}
 .band.edge{border-left:1px solid var(--faint)}
-.band span{position:absolute;bottom:8px;left:7px;font-size:.7rem;color:var(--muted);white-space:nowrap;letter-spacing:.06em;opacity:.8;transition:opacity var(--calm)}
+.band span{position:absolute;bottom:8px;left:7px;font-size:.7rem;color:var(--muted);white-space:nowrap;letter-spacing:.06em;opacity:.8;transition:opacity .25s}
 .aline{position:absolute;left:0;right:0;border-top:1px solid var(--faint);pointer-events:none}
-.aline span{position:absolute;right:8px;top:3px;font-size:.7rem;color:var(--muted);opacity:.8;letter-spacing:.03em;transition:opacity var(--calm)}
+.aline span{position:absolute;right:8px;top:3px;font-size:.7rem;color:var(--muted);opacity:.8;letter-spacing:.03em;transition:opacity .25s}
 /* Note labels step aside while a tone's reference lines are showing */
 .pad.refs-active .aline span,.pad.refs-active .band span{opacity:0}
 /* The whole default grid recedes while a reference layer is showing */
-.aline,.band.edge{transition:opacity var(--calm)}
-.pad.refs-active .aline,.pad.refs-active .band.edge{opacity:0}
-.band{transition:opacity var(--calm)}
+.aline,.band.edge{transition:opacity .25s}
+.pad.refs-active .aline,.pad.refs-active .band.edge{opacity:.3}
+.band{transition:opacity .25s}
 /* Sunburst through the tone being moved: long tapering arms along the axes (they fade out with
    distance, like a lens flare) and shorter, fainter arms on the diagonals */
 .burst{position:absolute;width:0;height:0;pointer-events:none;z-index:3;display:none}
 .pad.live .burst,.pad.live .tag{display:block}
-.pad.live .burst{animation:burstIn .6s cubic-bezier(.2,.7,.2,1)}
+.pad.live .burst{animation:burstIn .22s ease-out}
 @keyframes burstIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
 .burst i{position:absolute;left:0;top:0;transform:translate(-50%,-50%)}
 .burst .arm{
@@ -152,40 +134,24 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .ytag{left:8px;transform:translateY(-50%)}
 .ytag.at-top{transform:translateY(0)}
 .ytag.at-bottom{transform:translateY(-100%)}
-.refs{position:absolute;inset:0;pointer-events:none;z-index:4;opacity:0;visibility:hidden;transition:opacity var(--calm),visibility var(--calm)}
-.refs.show{opacity:1;visibility:visible}
+.refs{position:absolute;inset:0;pointer-events:none;z-index:4;display:none}
+.refs.show{display:block}
 .ref{position:absolute;left:0;right:0;height:0;opacity:.85}
-.ref.P8{border-top:1px solid var(--rc);box-shadow:0 0 6px var(--rc)}
-.ref.P5,.ref.M3{border-top:1px solid var(--rc)}
-.ref.m3{border-top:1px dashed var(--rc)}
-/* Small number tabs resting on each line: 8 octave, 5 fifth, 3 third. They sit above their line,
-   except the minor third's 3, which hangs below its line so the two thirds never collide. Each tab
-   is outlined in its line's own style and its base lies on the line, so the line runs straight through. */
+.ref.oct{border-top:1px solid var(--rc);box-shadow:0 0 6px var(--rc)}
+.ref.fifth{border-top:1px dashed var(--rc)}
+.ref.third{border-top:1px dotted var(--rc)}
+/* Labels are tabs resting on their line: maj third, fifth and octave sit above it;
+   min third hangs below it, so the two thirds never collide. Each tab is outlined in its
+   line's own style, and its base lies exactly on the line, so the line runs straight through. */
 .ref span{
-  position:absolute;right:12px;bottom:0;width:1.9em;text-align:center;box-sizing:border-box;
-  font-size:.66rem;font-weight:600;line-height:1;padding:3px 0 3px;
-  background:rgba(8,6,24,.88);color:var(--rc);backdrop-filter:blur(4px);
-  border:1px solid var(--rc);border-radius:6px 6px 0 0;
+  position:absolute;right:10px;bottom:0;width:6.2em;text-align:center;box-sizing:border-box;
+  font-size:.64rem;font-weight:500;letter-spacing:.04em;line-height:1;padding:3px 0 4px;
+  background:rgba(8,6,24,.88);color:var(--rc);white-space:nowrap;backdrop-filter:blur(4px);
+  border:1px solid var(--rc);border-radius:7px 7px 0 0;
 }
-.ref.m3 span{border-style:dashed}
-.ref.down span{bottom:auto;top:-1px;border-radius:0 0 6px 6px}
-.curve{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;overflow:visible;opacity:0;visibility:hidden;transition:opacity var(--calm-slow),visibility var(--calm-slow)}
-.curve.show{opacity:1;visibility:visible}
-.curve path{fill:none;stroke:var(--rc);stroke-width:1.5;vector-effect:non-scaling-stroke;opacity:.45;filter:drop-shadow(0 0 4px var(--rc))}
-.curve-panel{transition:opacity var(--calm-slow),visibility var(--calm-slow)}
-/* The curve controls only appear while a tone's reference layer is showing; their space stays
-   reserved so nothing below jumps */
-.curve-panel:not(.show){opacity:0;visibility:hidden}
-.curvebar{display:flex;align-items:center;gap:14px}
-.curvebar label{font-size:.8rem;letter-spacing:.03em;color:var(--ink)}
-.curve-ctl{flex:1;min-width:0}
-.curve-ctl input{width:100%;accent-color:#E4DBFF;margin:0}
-.curve-ticks{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-top:2px;letter-spacing:.04em}
-.ref .pt{position:absolute;top:0;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;
-  background:radial-gradient(closest-side,#fff 0%,var(--rc) 45%,color-mix(in srgb,var(--rc) 30%,transparent) 75%,transparent 100%);
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--rc) 60%,transparent),0 0 10px var(--rc)}
-.ref.hit:not(.pthit) .pt{transform:none}
-.ref.hit .pt{transform:scale(1.5);box-shadow:0 0 0 1px var(--rc),0 0 16px var(--rc),0 0 30px var(--rc)}
+.ref.fifth span{border-style:dashed}
+.ref.third span{border-style:dotted}
+.ref.down span{bottom:auto;top:-1px;border-radius:0 0 7px 7px;padding:4px 0 3px}
 .ref.hit{opacity:1;border-top-width:2px;box-shadow:0 0 10px var(--rc),0 0 22px var(--rc)}
 .ref.hit span{background:var(--rc);color:var(--rt);box-shadow:0 0 14px var(--rc)}
 .node,.ch .n,.master .n{position:relative}
@@ -214,7 +180,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 }
 /* Lock / active ring: a soft band of light that fades out on both sides */
 .node::after,.ch .n::after{
-  content:"";position:absolute;inset:-9px;border-radius:50%;pointer-events:none;z-index:-1;opacity:0;transition:opacity var(--calm);
+  content:"";position:absolute;inset:-9px;border-radius:50%;pointer-events:none;z-index:-1;opacity:0;transition:opacity .3s;
   background:radial-gradient(closest-side,
     transparent 64%,
     color-mix(in srgb,var(--ring,var(--rc)) 55%,transparent) 80%,
@@ -222,11 +188,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     transparent 100%);
 }
 .node.locked::after,.ch .n[aria-pressed="true"]::after{opacity:1}
-/* Line-locked tones get a thinner, fainter ring than point-locked ones */
-.node.locked.line-lock::after{
-  opacity:.6;
-  background:radial-gradient(closest-side,transparent 72%,color-mix(in srgb,var(--ring) 45%,transparent) 82%,transparent 92%);
-}
 .node{
   /* --v is the tone's volume from 0 to 1. Quiet tones read as small, faint, far-off stars;
      loud tones as large, bright, near ones. */
@@ -237,7 +198,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   transition:width .2s,height .2s,margin .2s;
 }
 /* Volume dims and desaturates the light itself; rings on the node stay at full strength */
-.node .orb,.node .num{opacity:calc(.5 + .5 * var(--v));transition:opacity var(--calm),filter var(--calm)}
+.node .orb,.node .num{opacity:calc(.5 + .5 * var(--v));transition:opacity .35s,filter .35s}
 .node .orb{filter:saturate(calc(.5 + .7 * var(--v)))}
 .node .orb::before{inset:-75%}
 .node::after{inset:calc(var(--s) * -.2)}
@@ -248,14 +209,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   background:radial-gradient(closest-side,transparent 60%,color-mix(in srgb,var(--pr) 78%,transparent) 77%,color-mix(in srgb,var(--pr) 28%,transparent) 88%,transparent 100%);
 }
 .node.muted .orb,.node.muted .num{opacity:.14}
-.node.oob .orb{opacity:.22}
-.node.oob::after{opacity:.55 !important}
 /* Small, quiet sunburst on the parent tone: four fine rays plus four shorter diagonals. */
-.node .flare{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:-1}
+.node .flare{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;display:none;z-index:-1}
+.node.parent .flare{display:block}
 /* Unlike the ring, the sunburst fades with the tone's volume (and nearly vanishes when muted) */
-.node .flare{opacity:0;transition:opacity var(--calm)}
-.node.parent .flare{opacity:calc(.2 + .8 * var(--v))}
-.node.parent.muted .flare{opacity:.12}
+.node .flare{opacity:calc(.2 + .8 * var(--v));transition:opacity .35s}
+.node.muted .flare{opacity:.12}
 .node .flare::before,.node .flare::after{
   content:"";position:absolute;left:0;top:0;
   width:calc(max(var(--s), 34px) * 3);height:2px;
@@ -272,9 +231,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 body.playing .node:not(.muted) .orb::before{animation:halo 5s ease-in-out infinite}
 body.playing .node:nth-of-type(odd):not(.muted) .orb::before{animation-duration:6.5s}
 @keyframes halo{0%,100%{opacity:.8}50%{opacity:1}}
-.pad.gliding .node{transition:left var(--calm-slow),top var(--calm-slow),width .2s,height .2s,margin .2s}
-.mixer.gliding .os .n{transition:top var(--calm-slow),left var(--calm-slow)}
-.mixer.gliding .os-fill{transition:height var(--calm-slow),width var(--calm-slow),opacity var(--calm)}
 .node.dragging{cursor:grabbing;z-index:200 !important}
 /* Keyboard focus only (not shown after mouse clicks) */
 .node:focus-visible{outline:1px dotted rgba(236,232,255,.7);outline-offset:6px}
@@ -309,11 +265,7 @@ body.playing .node:nth-of-type(odd):not(.muted) .orb::before{animation-duration:
 .ch.extra .read{color:var(--ink)}
 .master{display:flex;align-items:center;gap:12px}
 .master .n{flex:none}
-.master .mlabel{font:inherit;font-size:.8rem;color:var(--ink);white-space:nowrap;min-width:3.4em;letter-spacing:.03em;background:none;border:none;border-radius:6px;padding:4px 2px;text-align:left;cursor:pointer;transition:opacity var(--calm),color var(--calm)}
-.master .mlabel:hover{color:#fff}
-.master input[type=range]{flex:1;min-width:90px;accent-color:#E4DBFF;margin:0;transition:opacity var(--calm)}
-.master.off input[type=range]{opacity:.35}
-.master.off .mlabel{text-decoration:line-through;text-decoration-thickness:1px}
+.master .mlabel{font-size:.8rem;color:var(--ink);white-space:nowrap;min-width:3.4em;letter-spacing:.03em}
 .master.off .pct,.master.off .mlabel{opacity:.4}
 .master .os{flex:1;min-width:90px}
 /* Orb sliders: the glowing orb is the thumb. Drag it to set the level; click it to mute. */
@@ -324,7 +276,7 @@ body.playing .node:nth-of-type(odd):not(.muted) .orb::before{animation-duration:
 .os-track{position:absolute;border-radius:2px;background:rgba(236,232,255,.1)}
 .os.vert .os-track{left:50%;top:0;bottom:0;width:5px;transform:translateX(-50%);clip-path:polygon(0 0,100% 0,60% 100%,40% 100%)}   /* tapers to a point at the bottom */
 .os.horz .os-track{top:50%;left:17px;right:17px;height:5px;transform:translateY(-50%);clip-path:polygon(0 40%,100% 0,100% 100%,0 60%)}   /* tapers toward the low end */
-.os-fill{position:absolute;border-radius:2px;transition:opacity var(--calm);box-shadow:0 0 8px color-mix(in srgb,var(--nc) 45%,transparent)}
+.os-fill{position:absolute;border-radius:2px;transition:opacity .3s;box-shadow:0 0 8px color-mix(in srgb,var(--nc) 45%,transparent)}
 .os.vert .os-fill{left:0;right:0;bottom:0;background:linear-gradient(to top,color-mix(in srgb,var(--nc) 25%,transparent),var(--nc))}
 .os.horz .os-fill{top:0;bottom:0;left:0;background:linear-gradient(to right,color-mix(in srgb,var(--nc) 25%,transparent),var(--nc))}
 .os .n{position:absolute;transform:translate(-50%,-50%);cursor:grab}
@@ -334,8 +286,6 @@ body.playing .node:nth-of-type(odd):not(.muted) .orb::before{animation-duration:
 .master .os .n{width:30px;height:30px}
 .os.horz .os-track{left:15px;right:15px}
 .os.tone .n{--ts:calc(24px + 16px * var(--v,.5));width:var(--ts);height:var(--ts);font-size:calc(.6rem + .16rem * var(--v,.5))}
-.os .n{transition:background var(--calm),color var(--calm),border-color var(--calm)}
-.os .n::before{transition:opacity var(--calm)}
 .os .n.muted{background:transparent;color:var(--muted);border:1px dashed color-mix(in srgb,var(--nc) 55%,transparent)}
 .os .n.muted::before{opacity:0}
 .os.off .os-fill,.ch.parent-muted .os-fill{opacity:.22}
@@ -345,91 +295,28 @@ body.playing .node:nth-of-type(odd):not(.muted) .orb::before{animation-duration:
 .section.noise{flex:1 1 0}
 .section + .section{border-top:1px solid var(--line);padding-top:16px}
 .mixer-empty{font-size:.88rem;color:var(--muted);padding-top:6px;max-width:15em}
-.appfoot{position:relative;display:flex;justify-content:flex-end;margin-top:26px}
-.help-btn{width:38px;height:38px;padding:0;border-radius:50%;font-family:var(--display);font-size:1.25rem;font-weight:400;color:var(--muted);display:grid;place-items:center;transition:color var(--calm),border-color var(--calm),box-shadow var(--calm)}
-.help-btn:hover,.help-btn[aria-expanded="true"]{color:var(--ink);box-shadow:0 0 18px rgba(228,219,255,.18)}
-.help-panel{
-  position:absolute;right:0;bottom:calc(100% + 12px);z-index:2000;width:min(560px,calc(100vw - 44px));max-height:min(72vh,640px);overflow-y:auto;
-  padding:22px 26px 18px;border-radius:18px;
-  background:linear-gradient(180deg,rgba(28,22,60,.97),rgba(14,11,34,.97));border:1px solid var(--glass-edge);
-  box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 40px rgba(182,156,255,.12);backdrop-filter:blur(12px);
-}
-.help-panel[hidden]{display:none}
-.help-panel:not([hidden]){animation:helpIn .6s cubic-bezier(.2,.7,.2,1)}
-@keyframes helpIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.help-panel h2{
-  font-family:var(--display);font-weight:300;font-size:1.9rem;line-height:1.1;margin:0 0 10px;
-  background:linear-gradient(100deg,#FFF6FB 5%,#E2D6FF 40%,#FFC9E3 70%,#BFF3F5 95%);-webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.help-panel h3{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;margin:16px 0 4px}
-.help-panel p{font-size:.86rem;color:var(--ink);margin:0 0 8px;line-height:1.6}
-@media (max-width:680px){
-  /* Stacked layout: everything fits on one screen. One glass panel holds the field (as a window)
-     and the mixer; the logo row with Presets and Play is fixed to the bottom of the screen. */
-  :root{--bar:64px}
-  .wrap{padding:0}
-  .body{
-    flex-direction:column;gap:0;padding:14px 14px 10px;border-radius:0;overflow:hidden;
-    height:calc(100vh - var(--bar) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-    height:calc(100dvh - var(--bar) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-    background:linear-gradient(180deg,rgba(160,150,255,.07),rgba(160,150,255,.025));
-    border:none;   /* no backdrop blur here, so the Curve slider can sit in the fixed bottom bar */
-  }
-  .pad-wrap{display:contents}
-  /* The field shrinks with the screen height so the sliders still fit */
-  .pad{order:1;flex:none;align-self:center;width:min(100%, 37vh);width:min(100%, 37dvh);border-radius:14px}
-  .mixer{order:2;flex:1 1 auto;min-height:0;width:100%;height:auto !important;background:none;border:none;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;padding:14px 4px 0;margin-top:4px;gap:10px}
-  .section{gap:6px}
-  .section + .section{padding-top:10px}
-  .os.vert{margin:14px 0 10px;min-height:36px}
-  .section.tones{flex:1.5 1 0}
-  .ch{gap:4px}
-  .ch .read{font-size:.64rem}
-  /* Bottom bar */
-  .topbar{
-    position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0;
-    height:calc(var(--bar) + env(safe-area-inset-bottom, 0px));padding:0 64px env(safe-area-inset-bottom, 0px) 14px;
-    display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
-    background:linear-gradient(180deg,rgba(20,16,44,.92),rgba(10,8,26,.96));border-top:1px solid var(--glass-edge);
-    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  }
-  .ctrls{display:contents}
-  .preset-panel{grid-column:1;grid-row:1}
-  .brand{grid-column:2;grid-row:1;justify-self:center;width:min(120px,100%);margin:0}
-  #play{grid-column:3;grid-row:1;min-width:0;padding:10px 20px}
-  #presetBtn{padding:9px 16px}
-  .preset-menu{top:auto;bottom:calc(100% + 14px);right:auto;left:0;max-height:60vh}
-  .preset-status{position:absolute;left:12px;bottom:calc(100% + 8px);white-space:nowrap;padding:5px 12px;border-radius:999px;background:rgba(20,16,44,.92);border:1px solid var(--glass-edge)}
-  .preset-panel .preset-status:empty{display:none}
-  /* While a reference layer shows, the Curve slider takes over Presets' and the logo's space */
-  .fieldbar{margin:0}
-  .curve-panel{position:fixed;z-index:55;left:14px;right:calc(64px + 110px);bottom:calc(env(safe-area-inset-bottom, 0px) + 10px);height:44px;display:flex;align-items:center}
-  .curve-panel .curvebar{width:100%}
-  .curve-panel .curvebar label{display:none}
-  .appfoot{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom, 0px) + 13px);z-index:60;margin:0}
-  .help-btn{width:36px;height:36px}
-  .help-panel{bottom:calc(100% + 16px)}
-}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0s !important;animation-duration:0s !important}.pad.live .burst{animation:none}body.playing .node .orb::before,body.playing button.primary,body.playing #stars i.tw{animation:none}}
+.foot{font-size:.8rem;color:var(--muted);margin-top:28px;max-width:68ch;opacity:.85}
+@media (max-width:680px){.body{flex-direction:column}.pad-wrap{flex:none;width:100%;max-width:none}.mixer{width:100%;height:auto !important}.section.tones,.section.noise{flex:none}.os.vert{flex:none;height:170px}.section.noise .os.vert{height:100px}}
+@media (prefers-reduced-motion:reduce){.pad.live .burst{animation:none}body.playing .node .orb::before,body.playing button.primary,body.playing #stars i.tw{animation:none}}
 </style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
 <div class="wrap">
-  <h1 class="sr-only">Starsounds</h1>
-  <div class="topbar" id="topbar">
-  <div class="brand" id="brand" role="img" aria-label="Starsounds"><svg class="logo-svg" aria-hidden="true" focusable="false"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 543.37 60.62"><defs><style>.lga-1{fill:#e4dbff;}.lga-2{fill:#ffd2b4;}</style></defs><g ><path class="lga-1" d="M314.87,37.14c0,12.93-10.49,23.41-23.43,23.41s-23.43-10.48-23.43-23.41,10.49-23.41,23.43-23.41,23.43,10.48,23.43,23.41ZM302.54,37.08c0-6.12-4.97-11.09-11.1-11.09s-11.1,4.96-11.1,11.09,4.97,11.09,11.1,11.09,11.1-4.96,11.1-11.09Z"/><path class="lga-1" d="M411.85,25.8c-5.44-.54-10,3.19-10.06,8.51l-.23,19.92c-.04,3.45-3.6,5.35-6.62,5.31s-6.4-2.15-6.42-5.56l-.16-29.5c-.01-1.98-.24-3.94.42-5.73.95-2.61,3.44-3.98,5.84-4.09,2.75-.13,5.14.98,6.67,3.72,4.19-3.56,9.53-4.95,15.08-4.24,8.99,1.15,15.62,8.17,15.98,17.37l.1,21.42c.02,3.71-2.72,6.41-6.38,6.63-3.34.21-6.75-2.08-6.79-5.62l-.21-20.65c-.04-4.08-3.15-7.08-7.23-7.49Z"/><path class="lga-1" d="M367.14,14.69c3.21.17,5.94,2.75,5.93,5.9l-.08,20.2c-.03,7.42-4.8,13.8-11.46,16.94s-14.82,3.15-21.53-.42c-5.95-3.17-9.93-8.94-10.41-15.78l-.12-21.28c-.02-3.36,3.42-5.5,6.44-5.56,3.89-.07,6.73,2.76,6.74,6.57l.02,17.6c0,2.1.62,4.23,1.84,5.89,2.24,3.06,6.11,3.92,9.66,2.76,3.24-1.06,5.67-4.19,5.7-8.01l.15-18.94c.03-3.6,3.38-6.07,7.12-5.87Z"/><path class="lga-1" d="M511.22,56.85c-3.23-1.77-4.3-5.06-2.75-8s4.98-3.64,7.93-2c2.24,1.25,4.51,2.37,7.08,2.77,3.37.53,6.74-.31,7.08-2.87.62-4.72-8.37-3.91-15.35-7.52-4.34-2.25-6.9-6.4-6.74-11.3.09-2.65.61-5.23,2.19-7.37,6.19-8.39,19.32-8.23,28.12-3.55,1.94,1.03,2.84,3.09,2.68,5.03s-1.41,3.72-3.39,4.44-3.85.25-5.61-.66c-5.31-2.76-11.34-1.91-11.32,1.59,0,1.22,1.06,2.42,2.41,2.79l9.11,2.49c3.29.9,6.28,2.58,8.31,5.43,2.64,3.71,3.1,8.41,1.32,13.04-4.01,10.43-20.34,11.56-31.08,5.67Z"/><path class="lga-1" d="M466.75,59.96c-11.82-1.31-20.1-11.27-20.1-22.86,0-10.74,6.97-20.04,17.42-22.56,5.67-1.36,11.43-.46,16.36,2.95l.22-12.21C480.72,1.96,484.11-.01,487.22,0c2.81,0,6.42,2.07,6.42,5.49l.04,48.46c0,2.99-2.98,5.12-5.16,5.48-3.17.51-5.92-.67-7.44-3.53-4.12,3.29-8.91,4.66-14.32,4.06ZM466.29,47.39c3.63,1.66,7.55,1,10.47-1.24,2.76-2.11,4.17-5.34,4.25-9.04.12-5.54-3.4-10.31-8.68-11.17-5.41-.88-10.42,2.4-11.92,7.79s.56,11.23,5.87,13.66Z"/><path class="lga-1" d="M221.77,56.47c-2.88-1.72-3.57-5.07-2.29-7.52,1.44-2.75,4.77-3.67,7.66-2.26,2.28,1.11,4.41,2.37,6.95,2.85,3.69.7,7.33-.16,7.64-2.78.53-4.39-8.01-4.1-14.91-7.2-5.93-2.66-8.74-8.6-7.12-15,2.84-11.17,18.86-13.52,30.2-7.42,2.41,1.29,3.18,4.13,2.27,6.4s-3.3,3.62-5.95,3.2l-4.05-1.52c-4.58-1.72-9.58-1.38-9.93,1.85-.14,1.3.69,2.54,2.06,2.92l8.53,2.38c3.49.97,6.81,2.39,9.08,5.34,2.88,3.75,3.37,8.67,1.55,13.37-4.12,10.64-20.91,11.81-31.69,5.38Z"/><path class="lga-2" d="M131.73,55.92c-2.4-1.26-4.96-1.52-7.27-.36l-7.92,4c-1.44.72-2.92,1.04-4.53,1.02-3.6-.05-6.36-3.01-5.8-6.64l1.48-9.59c.36-2.29-.74-4.33-2.38-5.86l-5.66-5.24c-1.92-1.77-2.48-4.28-1.76-6.91.6-2.2,2.83-3.73,5.38-4.33l8.79-2.07c2.2-.52,3.75-1.73,4.93-3.6l4.62-7.27c1.32-2.08,3.57-3.1,5.76-3.24,2.47-.16,4.94.74,6.35,2.91l4.57,7c1.12,1.72,2.45,3.45,4.48,3.99l10.28,2.68c3.55.93,5.34,4.42,4.27,7.94-.49,1.64-1.56,2.99-2.83,4.15l-4.95,4.52c-1.76,1.61-2.3,3.81-1.89,6.18l1.42,8.27c.33,1.92-.14,3.69-1.3,5.08-2.22,2.63-6.22,2.52-9.47.81l-6.56-3.46Z"/><path class="lga-1" d="M3.19,56.7c-2.95-1.64-3.86-4.76-2.69-7.4,1.27-2.86,4.65-3.98,7.6-2.66l5.59,2.49c2.8,1.25,8.57.92,9.07-2.18.76-4.7-7.87-4.12-15.09-7.64C2.85,36.99.18,32.23.69,26.86c.54-5.61,4.27-9.99,9.72-11.8,6.75-2.24,14.21-1.33,20.53,2.02,2.67,1.41,3.3,4.82,1.91,7.22s-4.49,3.18-7.22,1.93c-3.16-1.45-6.52-2.66-9.95-1.67-1.27.37-2.22,1.46-2.32,2.53-.12,1.3.79,2.59,2.19,2.98l9.59,2.72c3.24.92,6.2,2.66,8.14,5.57,3.28,4.91,3.01,11.8-.86,16.31-6.57,7.65-20.27,7.02-29.25,2.03Z"/><path class="lga-1" d="M78.44,47.85c3.03-.51,5.23,2.11,5.66,4.67.47,2.79-.92,5.38-3.76,6.5-4.91,1.94-10.59,1.89-15.61-.05s-8.41-6.26-8.46-11.5l-.19-20.26c-.01-1.12-3.63.59-6.23-2.13-1.19-1.24-1.7-3.03-1.41-4.98.51-3.43,4.1-5.28,7.59-4.46l.23-5.4c.64-3.18,3.58-4.98,6.61-4.95s5.97,2.13,6.53,5.41l.16,4.76,6.88.07c2.85.03,4.94,2.35,5.25,4.87.36,2.82-1.16,5.56-4.17,6.13l-7.96.28-.03,17.29c0,2.77,2.13,4.87,4.82,4.42l4.09-.69Z"/><path class="lga-1" d="M187.76,35.9l-.3,18.35c-.06,3.4-3.56,5.39-6.63,5.33-2.91-.06-6.4-2.13-6.4-5.62l.03-34.03c0-3.06,3.47-4.94,5.7-5.18,3.29-.35,5.88,1.07,7.29,4.2,3.99-3.55,9.36-5.32,14.51-3.85,3.52,1,5.33,4.55,4.46,7.85s-4.26,4.96-7.83,4.35c-5.46-.92-10.4,2.82-10.84,8.6Z"/></g></svg></div>
-    <div class="ctrls">
-      <div class="preset-panel" id="presetPanel">
-        <div class="preset-status" id="presetStatus" aria-live="polite"></div>
-        <div class="presets">
-          <button id="presetBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="presetMenu">Presets</button>
-          <div class="preset-menu" id="presetMenu" role="menu" hidden></div>
-        </div>
+  <header>
+    <div>
+      <h1>Binaural Beat Designer</h1>
+      <p class="hint" id="hint">Drag a tone to tune it: left and right sets the beat, up and down sets the carrier tone. Click a tone to show its thirds, fifths and octaves. While they're showing, tones you drag snap onto those lines, and tones sitting on them move with it. Each tone's orb also sits on its volume slider: drag it to set the level, click it to mute.</p>
+    </div>
+    <div class="controls">
+      <div class="presets">
+        <button id="presetBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="presetMenu">Presets</button>
+        <div class="preset-menu" id="presetMenu" role="menu" hidden></div>
       </div>
       <button class="primary" id="play">Play</button>
+      <div class="preset-status" id="presetStatus" aria-live="polite"></div>
     </div>
-  </div>
+  </header>
   <div class="body">
     <div class="pad-wrap">
       <div class="pad" id="pad">
@@ -440,20 +327,8 @@ body.playing .node:nth-of-type(odd):not(.muted) .orb::before{animation-duration:
           <i class="arm d d1"></i><i class="arm d d2"></i>
           <i class="core"></i>
         </div>
-        <svg class="curve" id="curve" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
         <span class="tag xtag" id="xtag"></span>
         <span class="tag ytag" id="ytag"></span>
-      </div>
-      <div class="fieldbar">
-          <div class="curve-panel" id="curvePanel">
-            <div class="curvebar">
-              <label for="curveE">Curve</label>
-              <div class="curve-ctl">
-                <input type="range" id="curveE" min="-1" max="1" step="0.05" value="1">
-                <div class="curve-ticks"><span>Mirror</span><span>Even</span><span>Consonant</span></div>
-              </div>
-            </div>
-          </div>
       </div>
     </div>
     <div class="mixer" id="mixer">
@@ -467,22 +342,7 @@ body.playing .node:nth-of-type(odd):not(.muted) .orb::before{animation-duration:
       </div>
     </div>
   </div>
-  <div class="appfoot">
-    <button id="helpBtn" class="help-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="helpPanel" aria-label="About this app and how to use it">?</button>
-    <div class="help-panel" id="helpPanel" role="dialog" aria-labelledby="helpTitle" hidden>
-      <h2 id="helpTitle">Starsounds</h2>
-      <p>Use headphones. Each tone plays its carrier in the left ear and the carrier plus its beat in the right ear; the difference is the binaural beat you perceive.</p>
-      <h3>Tones</h3>
-      <p>Drag a tone to tune it: left and right sets the beat, up and down sets the carrier. Each tone's orb also rides on its volume slider: drag it to set the level, click it to mute. Louder tones look nearer and brighter.</p>
-      <h3>Reference lines and the curve</h3>
-      <p>Click a tone to show its octaves (8), fifths (5) and thirds (3). Each line has a glowing point where it meets the curve. Tones you drag snap onto a point (pitch and beat) or onto a line (pitch only). Point-locked tones get a full ring and follow the parent in both directions; line-locked tones get a fainter ring, follow its pitch and keep their own beat.</p>
-      <p>The Curve slider under the field bends the curve. Consonant: beats rise with pitch and both ears hear the same chord, perfectly in tune. Even: every point shares the parent's beat, a gentle shimmer. Mirror: beats fall as pitch rises, the most tension. A locked tone whose point leaves the field waits at the edge, muted, until it comes back.</p>
-      <h3>Noise</h3>
-      <p>W, P and Br add white, pink and brown noise, which can play together; drag a channel's orb for its level, click it to switch it on or off. Their stars appear in the field: fine fast sparkles for white, a softer shimmer for pink, slow warm glows for brown.</p>
-      <h3>Levels and presets</h3>
-      <p>The Tone and Noise sliders set the overall listening level of each section without changing how anything looks; click their label to mute the whole section. Presets load a ready-made chord; after loading, move anything you like, since presets never change. Your settings are saved in this browser.</p>
-    </div>
-  </div>
+  <p class="foot">Use headphones. Each tone plays its carrier in the left ear and the carrier plus the beat in the right ear. A tone's slider sets how loud it is, and how near and bright it looks. The Tone and Noise sliders at the top of each section set the overall listening level of all tones and of all noise without changing how anything looks, and their orbs mute the whole section. When noise is on, its stars appear in the square: fine fast sparkles for white, a softer mixed shimmer for pink, slow warm glows for brown. W, P and Br add white, pink and brown noise, which can play at the same time; drag a channel's orb to set its level and click it to switch that channel on or off. Presets load a ready-made chord where every tone's beat scales with its carrier, so both ears stay in tune; after loading, move anything you like, since presets themselves never change. Your settings are saved in this browser.</p>
 </div>
 <script>
 const $ = id => document.getElementById(id);
@@ -506,7 +366,7 @@ const STORE = 'beat-designer-tones';
 const SNAP_PX = 10;     // how close (in pixels) a tone must come to a reference line to snap onto it
 const LOCK_TOL = 0.01;  // Hz tolerance for "sitting on" a reference line
 const pad = $('pad');
-let nodes = [], dragNode = null, liveTimer = null, snapHit = null, gliding = false;
+let nodes = [], dragNode = null, liveTimer = null, snapHit = null;
 let ac = null, master = null, beatBus = null, noiseBus = null, beatVoices = new Map(), playing = false;
 const beatMaster = { on: true, vol: 100 };
 const noiseMaster = { on: true, vol: 100 };
@@ -564,7 +424,6 @@ function showLines(n) {
 function hideLines() { pad.classList.remove('live'); }
 
 // ---- Interval reference lines (thirds, fifths, octaves of a tone's carrier) ----
-// Octaves, fifths and major thirds get solid lines; minor thirds get dashed lines
 const INTERVALS = [
   { r: 5 / 4, name: 'maj third', key: 'M3', cls: 'third' },
   { r: 6 / 5, name: 'min third', key: 'm3', cls: 'third' },
@@ -581,47 +440,11 @@ function refList(carrier) {
       out.push({ f, name: iv.name, key: iv.key, cls: iv.cls });
     }
   }
-  const seen = new Set();
-  return out.filter(r => { const k = r.f.toFixed(4); if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => b.f - a.f);
-}
-// ---- The curve ----
-// Points on the lines sit where a tone's beat follows   b = parentBeat × (c / parentCarrier)^e
-//   e =  1  Consonant: beat scales with pitch, both ears hear the same chord (in tune)
-//   e =  0  Even: every tone shares the parent's beat; the right ear drifts slightly
-//   e = -1  Mirror: beat runs against pitch, so the beats form an inverted chord; the right ear drifts most
-// Anything in between is allowed for experimenting.
-let CURVE_E = 1;
-function curveBeat(parent, f) { return parent.beat * Math.pow(f / parent.carrier, CURVE_E); }
-function inRange(b) { return b >= BEAT_MIN - 1e-9 && b <= BEAT_MAX + 1e-9; }
-function drawCurve() {
-  const svg = $('curve'), path = svg.querySelector('path');
-  const parent = nodes.find(n => n.refOn);
-  if (!parent) { svg.classList.remove('show'); return; }
-  svg.style.setProperty('--rc', COLORS[parent.slot].c);
-  const pts = [];
-  for (let i = 0; i <= 200; i++) {
-    const fy = i / 200, c = CAR_MAX * Math.pow(CAR_MIN / CAR_MAX, fy), b = curveBeat(parent, c);
-    pts.push(inRange(b) ? [beatToFx(b) * 1000, fy * 1000] : null);
-  }
-  let d = '', pen = false;
-  for (const p of pts) {
-    if (!p) { pen = false; continue; }
-    d += (pen ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' ';
-    pen = true;
-  }
-  path.setAttribute('d', d);
-  svg.classList.add('show');
-}
-// Worst right-ear drift (cents) among tones locked to the parent
-function lockedDrift(parent) {
-  let worst = 0;
-  for (const m of nodes) if (lockedTo(parent, m) && !m.oob)
-    worst = Math.max(worst, Math.abs(1200 * Math.log2((1 + m.beat / m.carrier) / (1 + parent.beat / parent.carrier))));
-  return worst;
+  return out.sort((a, b) => b.f - a.f);
 }
 function drawRefs(n) {
   n.refEl.classList.toggle('show', n.refOn);
-  if (!n.refOn) { if (!nodes.some(m => m.refOn)) { drawCurve(); updateCurveNote(); } return; }
+  if (!n.refOn) return;
   n.refEl.style.setProperty('--rc', COLORS[n.slot].c);
   n.refEl.style.setProperty('--rt', COLORS[n.slot].t);
   n.refEl.innerHTML = '';
@@ -629,143 +452,70 @@ function drawRefs(n) {
     const fy = carToFy(rf.f);
     const d = document.createElement('div');
     const isHit = snapHit && snapHit.slot === n.slot && Math.abs(snapHit.f - rf.f) < 1e-6;
-    const isPointHit = isHit && !snapHit.line;
-    // Minor third's tab hangs below its line; the others sit above. Tabs never move: near an edge,
-    // the field simply cuts off whatever part of a tab doesn't fit.
-    const down = rf.key === 'm3';
-    d.className = 'ref ' + rf.cls + ' ' + rf.key + (down ? ' down' : '') + (isHit ? ' hit' : '') + (isPointHit ? ' pthit' : '');
+    // Min third hangs below its line; the others sit above. Near an edge, a tab flips so it stays inside.
+    let down = rf.key === 'm3';
+    if (!down && fy < 0.05) down = true;
+    if (down && fy > 0.95) down = false;
+    d.className = 'ref ' + rf.cls + ' ' + rf.key + (down ? ' down' : '') + (isHit ? ' hit' : '');
     d.style.top = (fy * 100) + '%';
-    d.title = rf.name;
-    d.innerHTML = '<span>' + ({ P8: '8', P5: '5', M3: '3', m3: '3' })[rf.key] + '</span>';
-    // Point on this line where it meets the curve
-    const pb = curveBeat(n, rf.f);
-    if (inRange(pb)) {
-      const pt = document.createElement('i');
-      pt.className = 'pt';
-      pt.style.left = (beatToFx(pb) * 100) + '%';
-      d.appendChild(pt);
-    }
+    d.innerHTML = '<span>' + rf.name + '</span>';
     n.refEl.appendChild(d);
   });
-  drawCurve(); updateCurveNote();
 }
-// Points from the active tone: each reference line's carrier, with the beat taken from the curve
 function activeRefs(except) {
   const out = [];
   for (const m of nodes) {
     if (except.has(m) || !m.refOn) continue;
-    refList(m.carrier).forEach(r => {
-      const b = curveBeat(m, r.f);
-      if (inRange(b)) out.push({ f: r.f, b, name: r.name, slot: m.slot });
-    });
+    refList(m.carrier).forEach(r => out.push({ f: r.f, name: r.name, slot: m.slot }));
   }
   return out;
 }
 // Carrier for a vertical position: snaps onto a nearby reference line if one is showing,
 // otherwise to the usual 5 Hz steps
-// Position for a pointer: snaps onto a nearby ideal point in both directions,
-// otherwise to the usual 5 Hz carrier and 0.5 Hz beat steps
-const POINT_SNAP_PX = 14;
-function activeLines(except) {
-  const out = [];
-  for (const m of nodes) {
-    if (except.has(m) || !m.refOn) continue;
-    refList(m.carrier).forEach(r => out.push({ f: r.f, name: r.name, slot: m.slot, line: true }));
+function carrierFor(fy, except) {
+  const h = pad.getBoundingClientRect().height || 1;
+  let best = null, bestPx = SNAP_PX;
+  for (const r of activeRefs(except)) {
+    const px = Math.abs(carToFy(r.f) - fy) * h;
+    if (px <= bestPx) { best = r; bestPx = px; }
   }
-  return out;
-}
-function pointFor(fx, fy, except) {
-  const r = pad.getBoundingClientRect(), w = r.width || 1, h = r.height || 1;
-  // 1. A nearby point wins: pitch and beat both snap
-  let best = null, bestPx = POINT_SNAP_PX;
-  for (const p of activeRefs(except)) {
-    const px = Math.hypot((beatToFx(p.b) - fx) * w, (carToFy(p.f) - fy) * h);
-    if (px <= bestPx) { best = p; bestPx = px; }
-  }
-  if (best) return { car: best.f, bt: best.b, hit: best };
-  // 2. Otherwise a nearby line catches the pitch only; the beat follows the usual steps
-  let line = null, linePx = SNAP_PX;
-  for (const l of activeLines(except)) {
-    const px = Math.abs(carToFy(l.f) - fy) * h;
-    if (px <= linePx) { line = l; linePx = px; }
-  }
-  if (line) return { car: line.f, bt: fxToBeat(fx), hit: line };
-  // 3. Otherwise the grid
-  return { car: fyToCar(fy), bt: fxToBeat(fx), hit: null };
+  return best ? { car: best.f, hit: best } : { car: fyToCar(fy), hit: null };
 }
 function setSnap(hit) {
-  const same = (!hit && !snapHit) || (hit && snapHit && hit.slot === snapHit.slot && hit.f === snapHit.f && !!hit.line === !!snapHit.line);
+  const same = (!hit && !snapHit) || (hit && snapHit && hit.slot === snapHit.slot && hit.f === snapHit.f);
   snapHit = hit;
   if (!same) nodes.forEach(drawRefs);
 }
 
 // ---- Active tone and locked tones ----
-// Only one tone shows its reference lines at a time. Tones sitting exactly on one of its points
-// are locked to it: they get a ring in its color and move with it in both directions, keeping
-// their place on the curve.
+// Only one tone shows its reference lines at a time. Tones sitting exactly on those lines are
+// locked to it: they get a ring in its color and move with it, keeping every interval.
 function setActiveRefs(target) {
   for (const m of nodes) { m.refOn = m === target; drawRefs(m); }
-  refreshLocks(); nodes.forEach(placeNode); save(); updateRings(); syncVoices(); updateCurveNote();
-}
-// A tone locks when it lands exactly on one of the parent's points. Once locked it stays locked
-// until you drag it away or the parent is deselected, even if the curve or the parent pushes its
-// point past the edge of the field: then it waits at the edge, muted, and comes back (and unmutes)
-// as soon as its point is inside the field again.
-function onLine(parent, child) {
-  return refList(parent.carrier).some(r => Math.abs(r.f - child.carrier) < LOCK_TOL);
-}
-function onPoint(parent, child) {
-  return refList(parent.carrier).some(r =>
-    Math.abs(r.f - child.carrier) < LOCK_TOL && Math.abs(curveBeat(parent, r.f) - child.beat) < LOCK_TOL);
+  save(); updateRings();
 }
 function lockedTo(parent, child) {
-  return !!(parent.refOn && child !== parent && child.lock && child.lock.slot === parent.slot);
-}
-function refreshLocks() {
-  const parent = nodes.find(n => n.refOn);
-  for (const m of nodes) {
-    if (!parent || m === parent) { m.lock = null; m.oob = false; continue; }
-    if (m.lock && m.lock.slot === parent.slot && m !== dragNode) continue;   // locks persist
-    // Point lock: pitch and beat follow the curve. Line lock: pitch follows, the tone keeps its own beat.
-    m.lock = onPoint(parent, m) ? { slot: parent.slot, ratio: m.carrier / parent.carrier, type: 'point' }
-           : onLine(parent, m)  ? { slot: parent.slot, ratio: m.carrier / parent.carrier, type: 'line' } : null;
-    if (!m.lock) m.oob = false;
-  }
-}
-// Put a locked tone on its point, or park it at the edge (muted) if its point is out of range
-function applyIdeal(m, parent) {
-  const b = curveBeat(parent, m.carrier);
-  if (inRange(b)) { m.beat = b; m.oob = false; }
-  else { m.beat = clamp(b, BEAT_MIN, BEAT_MAX); m.oob = true; }
-  placeNode(m);
+  if (!parent.refOn || child === parent) return false;
+  return refList(parent.carrier).some(r => Math.abs(r.f - child.carrier) < LOCK_TOL);
 }
 function beginGroup(n) {
   n.groupSet = new Set([n]);
   if (n.refOn) nodes.forEach(m => { if (lockedTo(n, m)) n.groupSet.add(m); });
-  else n.lock = null;   // dragging a locked tone detaches it; it locks again if you drop it on a point
-  n.group = [...n.groupSet].filter(m => m !== n).map(m => ({ m, ratio: m.lock ? m.lock.ratio : m.carrier / n.carrier }));
-  // Pitch: the group only moves as far as its highest and lowest tones allow.
-  // Beat: the parent moves freely; locked tones whose points leave the field wait at the edge, muted.
+  n.group = [...n.groupSet].filter(m => m !== n).map(m => ({ m, ratio: m.carrier / n.carrier }));
+  // The group can only move as far as its highest and lowest tones allow
   let lo = CAR_MIN, hi = CAR_MAX;
   for (const g of n.group) { lo = Math.max(lo, CAR_MIN / g.ratio); hi = Math.min(hi, CAR_MAX / g.ratio); }
-  n.groupLo = lo; n.groupHi = hi; n.groupBlo = BEAT_MIN; n.groupBhi = BEAT_MAX;
+  n.groupLo = lo; n.groupHi = hi;
 }
-function moveGroup(n, car, bt) {
+function moveGroup(n, car) {
   n.carrier = clamp(car, n.groupLo, n.groupHi);
-  if (bt !== undefined) n.beat = clamp(bt, BEAT_MIN, BEAT_MAX);
-  for (const g of n.group) { g.m.carrier = n.carrier * g.ratio; if (g.m.lock && g.m.lock.type === 'line') placeNode(g.m); else applyIdeal(g.m, n); }
+  for (const g of n.group) { g.m.carrier = n.carrier * g.ratio; placeNode(g.m); }
 }
 function updateRings() {
   pad.classList.toggle('refs-active', nodes.some(n => n.refOn));
-  const refsOn = nodes.some(n => n.refOn);
-  $('curvePanel').classList.toggle('show', refsOn);
-  $('presetPanel').classList.toggle('away', refsOn);
-  document.body.classList.toggle('refs-on', refsOn);
-  if (refsOn && !$('presetMenu').hidden) { $('presetMenu').hidden = true; $('presetBtn').setAttribute('aria-expanded', 'false'); }
   for (const n of nodes) {
     const p = n.refOn ? n : nodes.find(q => lockedTo(q, n));
     n.el.classList.toggle('locked', !!p);
-    n.el.classList.toggle('line-lock', !!(n.lock && n.lock.type === 'line' && p && p !== n));
     n.el.classList.toggle('parent', !!n.refOn);
     // The active (parent) tone gets a white ring; tones locked to it get a ring in its color
     if (p) n.el.style.setProperty('--ring', p === n ? '#FFFFFF' : COLORS[p.slot].c);
@@ -773,14 +523,13 @@ function updateRings() {
 }
 
 // ---- Tones ----
-function label(n) { return 'Tone ' + (n.slot + 1) + ': carrier ' + fmt(n.carrier) + ' Hz, beat ' + fmt(n.beat) + ' Hz, volume ' + n.vol + (n.oob ? ', waiting at the edge (muted)' : n.muted || !beatMaster.on ? ', muted' : ''); }
+function label(n) { return 'Tone ' + (n.slot + 1) + ': carrier ' + fmt(n.carrier) + ' Hz, beat ' + fmt(n.beat) + ' Hz, volume ' + n.vol + (n.muted || !beatMaster.on ? ', muted' : ''); }
 function placeNode(n) {
   n.el.style.left = (beatToFx(n.beat) * 100) + '%';
   n.el.style.top = (carToFy(n.carrier) * 100) + '%';
   // Brightness follows the tone's own slider; the All tones level only affects sound, but its mute shows here
   n.el.style.setProperty('--v', (n.vol / 100).toFixed(3));
-  n.el.classList.toggle('muted', !!n.muted || !!n.oob || !beatMaster.on);
-  n.el.classList.toggle('oob', !!n.oob);
+  n.el.classList.toggle('muted', !!n.muted || !beatMaster.on);
   n.el.setAttribute('aria-label', label(n) + '. Arrow keys move it. Enter shows its reference lines.');
   n.el.title = label(n);
   n.el.setAttribute('aria-pressed', !!n.refOn);
@@ -802,18 +551,15 @@ function makeNode(slot, carrier, beat, vol, muted, refOn) {
   el.addEventListener('keydown', e => {
     const k = e.key;
     if (k === 'Enter' || k === ' ') { e.preventDefault(); setActiveRefs(n.refOn ? null : n); placeNode(n); return; }
-    if (k === 'ArrowLeft' || k === 'ArrowRight') {
-      beginGroup(n);
-      const right = k === 'ArrowRight', b = n.beat;
-      moveGroup(n, n.carrier, right ? Math.floor(b / 0.5 + 1e-9) * 0.5 + 0.5 : Math.ceil(b / 0.5 - 1e-9) * 0.5 - 0.5);
-    }
+    if (k === 'ArrowLeft') n.beat = clamp(n.beat - 0.5, BEAT_MIN, BEAT_MAX);
+    else if (k === 'ArrowRight') n.beat = clamp(n.beat + 0.5, BEAT_MIN, BEAT_MAX);
     else if (k === 'ArrowUp' || k === 'ArrowDown') {
       beginGroup(n);
       const up = k === 'ArrowUp', c = n.carrier;
       let next = up ? Math.floor(c / 5 + 1e-9) * 5 + 5 : Math.ceil(c / 5 - 1e-9) * 5 - 5;   // next 5 Hz step
-      for (const l of activeLines(n.groupSet)) {       // ...or a reference line, if one is nearer
-        if (up && l.f > c + 1e-6 && l.f < next) next = l.f;
-        if (!up && l.f < c - 1e-6 && l.f > next) next = l.f;
+      for (const r of activeRefs(n.groupSet)) {       // ...or a reference line, if one is nearer
+        if (up && r.f > c + 1e-6 && r.f < next) next = r.f;
+        if (!up && r.f < c - 1e-6 && r.f > next) next = r.f;
       }
       moveGroup(n, next);
     }
@@ -910,7 +656,7 @@ function buildToneChannels() {
     const sl = orbSlider({
       vertical: true, cls: 'tone', color: col.c, textColor: col.t, text: String(n.slot + 1), value: n.vol,
       label: 'Tone ' + (n.slot + 1) + ' volume', offWord: 'muted', toggleWord: 'mutes or unmutes', offVerb: 'mute', onVerb: 'unmute',
-      isOff: () => n.muted || !!n.oob,
+      isOff: () => n.muted,
       onInput: v => { n.vol = v; placeNode(n); changed(); },
       onToggle: () => { n.muted = !n.muted; placeNode(n); changed(); }
     });
@@ -941,24 +687,19 @@ function buildNoiseChannels() {
   });
 }
 // Horizontal master slider that runs across the top of its section
-// Test: master sliders styled like the Curve slider (plain track and thumb). Click the label to mute.
 function buildMaster(holder, opts) {
   const box = document.createElement('div'); box.className = 'master';
-  const lab = document.createElement('button'); lab.className = 'mlabel'; lab.textContent = opts.short;
-  const r = document.createElement('input');
-  r.type = 'range'; r.min = 0; r.max = 100; r.step = 1; r.value = opts.state.vol;
-  r.setAttribute('aria-label', opts.label + ' level');
   const pct = document.createElement('span'); pct.className = 'pct'; pct.textContent = opts.state.vol + '%';
-  const sync = () => {
-    box.classList.toggle('off', !opts.state.on);
-    lab.setAttribute('aria-pressed', !opts.state.on);
-    lab.setAttribute('aria-label', (opts.state.on ? 'Mute ' : 'Unmute ') + opts.label.toLowerCase());
-    lab.title = opts.state.on ? 'Click to mute' : 'Muted. Click to unmute';
-  };
-  r.addEventListener('input', () => { opts.state.vol = +r.value; pct.textContent = r.value + '%'; save(); opts.sync(); });
-  lab.addEventListener('click', () => { opts.state.on = !opts.state.on; sync(); save(); opts.sync(); opts.cascade(); });
-  sync();
-  box.append(lab, r, pct);
+  const sl = orbSlider({
+    vertical: false, color: opts.bg, textColor: opts.fg, text: '', value: opts.state.vol,
+    label: opts.label + ' level', offWord: 'muted', toggleWord: 'mutes or unmutes the section', offVerb: 'mute ' + opts.label.toLowerCase(), onVerb: 'unmute ' + opts.label.toLowerCase(),
+    isOff: () => !opts.state.on,
+    onInput: v => { opts.state.vol = v; pct.textContent = v + '%'; save(); opts.sync(); },
+    onToggle: () => { opts.state.on = !opts.state.on; box.classList.toggle('off', !opts.state.on); save(); opts.sync(); opts.cascade(); }
+  });
+  box.classList.toggle('off', !opts.state.on);
+  const lab = document.createElement('span'); lab.className = 'mlabel'; lab.textContent = opts.short;
+  box.append(lab, sl.el, pct);
   holder.appendChild(box);
 }
 
@@ -975,35 +716,21 @@ function cascadeNoise() {
 // White: many fine points, each flickering independently and fast (every frequency equally).
 // Pink:  fewer, softer stars whose shimmer mixes fast, medium and slow changes (1/f, like pink noise).
 // Brown: a handful of large, warm glows that swell and drift slowly (a random walk, like brown noise).
-// Star counts are set per area of the field (per 100 x 100 px at full level), so a bigger field
-// gets proportionally more stars instead of looking sparse.
 const SKY = {
-  white: { density: 14,  rMin: 0.9, rMax: 1.8, rgb: '236,240,255', sprite: null, glow: 0 },
-  pink:  { density: 6,   rMin: 1.0, rMax: 2.1, rgb: '255,201,227', sprite: null, glow: 3.5 },
-  brown: { density: 1.7, rMin: 2.4, rMax: 4.4, rgb: '230,194,154', sprite: null, glow: 5 }
+  white: { max: 240, rMin: 0.5, rMax: 1.1, rgb: '236,240,255', sprite: null, glow: 0 },
+  pink:  { max: 110, rMin: 1.0, rMax: 2.0, rgb: '255,201,227', sprite: null, glow: 3.5 },
+  brown: { max: 34,  rMin: 2.4, rMax: 4.4, rgb: '230,194,154', sprite: null, glow: 5 }
 };
-function makeStar(spec) {
-  return {
-    x: Math.random(), y: Math.random(),
-    r: spec.rMin + Math.random() * (spec.rMax - spec.rMin),
-    rank: Math.random(),                 // lower ranks appear first as the level rises
-    a: Math.random(), p: [Math.random(), Math.random(), Math.random()]
-  };
-}
-// Grow or trim each layer to match the field's current area, keeping the stars already there
-function fitStars() {
-  const area = (skyW * skyH) / 10000;
-  for (const spec of Object.values(SKY)) {
-    const want = Math.round(spec.density * area);
-    while (spec.stars.length < want) spec.stars.push(makeStar(spec));
-    if (spec.stars.length > want) spec.stars.length = want;
-  }
-}
 const skyCanvas = $('sky'), skyCtx = skyCanvas.getContext('2d');
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let skyW = 0, skyH = 0, skyRaf = null, skyLast = 0;
 for (const [type, spec] of Object.entries(SKY)) {
-  spec.stars = [];
+  spec.stars = Array.from({ length: spec.max }, () => ({
+    x: Math.random(), y: Math.random(),
+    r: spec.rMin + Math.random() * (spec.rMax - spec.rMin),
+    rank: Math.random(),                 // lower ranks appear first as the level rises
+    a: Math.random(), p: [Math.random(), Math.random(), Math.random()]
+  }));
   // Soft glow sprite for the larger stars
   const c = document.createElement('canvas'); c.width = c.height = 64;
   const g = c.getContext('2d'), grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
@@ -1025,7 +752,6 @@ function skySize() {
   $('mixer').style.height = r.height + 'px';   // mixer matches the field (overridden on narrow screens)
   skyCanvas.width = Math.round(skyW * dpr); skyCanvas.height = Math.round(skyH * dpr);
   skyCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  fitStars();
   skyRefresh();
 }
 function skyStep(type, s, dt) {
@@ -1061,7 +787,7 @@ function skyDraw(dt) {
         skyCtx.drawImage(spec.sprite, x - d / 2, y - d / 2, d, d);
       } else {
         skyCtx.fillStyle = 'rgb(' + spec.rgb + ')';
-        skyCtx.beginPath(); skyCtx.arc(x, y, s.r / 2, 0, Math.PI * 2); skyCtx.fill();
+        skyCtx.fillRect(x - s.r / 2, y - s.r / 2, s.r, s.r);
       }
     }
   }
@@ -1097,14 +823,15 @@ function startDrag(n, e) {
 pad.addEventListener('pointermove', e => {
   if (!dragNode) return;
   const { fx, fy } = posFromEvent(e);
-  let { car, bt, hit } = pointFor(fx, fy, dragNode.groupSet);
-  const bc = clamp(car, dragNode.groupLo, dragNode.groupHi), bb = clamp(bt, dragNode.groupBlo, dragNode.groupBhi);
-  if (bc !== car || bb !== bt) { car = bc; bt = bb; hit = null; }
+  const bt = fxToBeat(fx);
+  let { car, hit } = carrierFor(fy, dragNode.groupSet);
+  const bounded = clamp(car, dragNode.groupLo, dragNode.groupHi);
+  if (bounded !== car) { car = bounded; hit = null; }
   const snapChanged = (hit ? hit.slot + ':' + hit.f : '') !== (snapHit ? snapHit.slot + ':' + snapHit.f : '');
   if (bt === dragNode.beat && car === dragNode.carrier && !snapChanged) return;
   dragNode.moved = true;
   if (snapChanged) setSnap(hit);
-  moveGroup(dragNode, car, bt); placeNode(dragNode); changed();
+  dragNode.beat = bt; moveGroup(dragNode, car); placeNode(dragNode); changed();
 });
 const endDrag = () => {
   if (!dragNode) return;
@@ -1119,8 +846,8 @@ pad.addEventListener('pointercancel', endDrag);
 function save() {
   try {
     localStorage.setItem(STORE, JSON.stringify({
-      tones: nodes.map(n => ({ s: n.slot, c: n.carrier, b: n.beat, v: n.vol, m: n.muted, r: n.refOn, lk: n.lock ? n.lock.ratio : null, lt: n.lock ? n.lock.type : null, o: !!n.oob })),
-      noises, beatMaster, noiseMaster, curve: CURVE_E
+      tones: nodes.map(n => ({ s: n.slot, c: n.carrier, b: n.beat, v: n.vol, m: n.muted, r: n.refOn })),
+      noises, beatMaster, noiseMaster
     }));
   } catch (e) {}
 }
@@ -1141,10 +868,7 @@ function load() {
       : makeNode(slot, d.carrier, d.beat, d.vol, false, false);
     if (t && t.r) active = n;
   }
-  if (active) {
-    active.refOn = true;   // only one can be active
-    nodes.forEach(n => { const t = saved[n.slot]; if (t && n !== active && typeof t.lk === 'number') { n.lock = { slot: active.slot, ratio: t.lk, type: t.lt === 'line' ? 'line' : 'point' }; n.oob = !!t.o; } });
-  }
+  if (active) active.refOn = true;   // only one can be active
   if (data && !Array.isArray(data)) {
     if (data.noises) NOISE_TYPES.forEach(nt => {
       const v = data.noises[nt.type];
@@ -1153,61 +877,12 @@ function load() {
     else if (data.noise && noises[data.noise.type]) {
       noises[data.noise.type].on = !!data.noise.on; noises[data.noise.type].vol = clamp(+data.noise.vol || 0, 0, 100);
     }
-    if (typeof data.curve === 'number') CURVE_E = clamp(data.curve, -1, 1);
     for (const [key, obj] of [['beatMaster', beatMaster], ['noiseMaster', noiseMaster]]) {
       if (data[key]) { obj.on = data[key].on !== false; obj.vol = clamp(+data[key].vol || 0, 0, 100); }
     }
   }
 }
-function changed() { refreshLocks(); save(); syncVoices(); updateRings(); updateCurveNote(); }
-function curveName(e) {
-  if (Math.abs(e - 1) < 1e-9) return 'Consonant';
-  if (Math.abs(e) < 1e-9) return 'Even';
-  if (Math.abs(e + 1) < 1e-9) return 'Mirror';
-  return e > 0 ? 'Between even and consonant' : 'Between mirror and even';
-}
-const CURVE_HELP = {
-  'Consonant': 'Beats rise with pitch, so both ears hear the same chord. Tones on these points are in tune.',
-  'Even': 'Every point shares the parent\'s beat. Gentle drift in the right ear, like a soft chorus.',
-  'Mirror': 'Beats fall as pitch rises, so the beats form an upside-down chord. The right ear drifts the most: tense, tidal.',
-  'Between even and consonant': 'Beats rise with pitch, but less than consonant. A little drift in the right ear.',
-  'Between mirror and even': 'Beats fall slowly as pitch rises. Noticeable drift in the right ear.'
-};
-function updateCurveNote() {
-  const note = $('curveNote'); if (!note) return;
-  const name = curveName(CURVE_E), parent = nodes.find(n => n.refOn);
-  let txt = name + ': ' + CURVE_HELP[name];
-  if (parent) {
-    const d = lockedDrift(parent);
-    const onPts = nodes.filter(m => lockedTo(parent, m) && m.lock.type === 'point').length;
-    const onLns = nodes.filter(m => lockedTo(parent, m) && m.lock.type === 'line').length;
-    if (onPts || onLns) {
-      const parts = [];
-      if (onPts) parts.push(onPts + ' on points');
-      if (onLns) parts.push(onLns + ' on lines (keeping their own beat)');
-      txt += ' Locked: ' + parts.join(', ') + '; right ear ' + (d < 0.5 ? 'in tune.' : 'within ' + Math.round(d) + ' cents.');
-    }
-    const parked = nodes.filter(m => m.oob).length;
-    if (parked) txt += ' ' + parked + (parked === 1 ? ' tone is' : ' tones are') + ' waiting at the edge, muted, until the curve brings ' + (parked === 1 ? 'it' : 'them') + ' back.';
-  } else txt += '';
-  note.textContent = txt;
-}
-function setCurve(e) {
-  // Tones locked on the old curve ride along to the new one (waiting at the edge if they run out of room)
-  const parent = nodes.find(n => n.refOn);
-  const riders = parent ? nodes.filter(m => lockedTo(parent, m) && m.lock.type === 'point') : [];   // line-locked tones keep their beat
-  CURVE_E = e;
-  if (+$('curveE').value !== e) $('curveE').value = e;
-  riders.forEach(m => applyIdeal(m, parent));
-  nodes.forEach(drawRefs);
-  changed();
-}
-$('curveE').addEventListener('input', e => {
-  let v = +e.target.value;
-  for (const d of [-1, 0, 1]) if (Math.abs(v - d) <= 0.06) v = d;   // gentle detents at Mirror, Even and Consonant
-  e.target.value = v;
-  setCurve(v);
-});
+function changed() { save(); syncVoices(); updateRings(); }
 
 // ---- Audio: each tone is a left/right sine pair (carrier, carrier + beat) ----
 function startAudio() {
@@ -1217,24 +892,24 @@ function startAudio() {
     master = ac.createGain();
     const t = ac.currentTime;
     master.gain.setValueAtTime(0, t);
-    master.gain.linearRampToValueAtTime(1, t + 3);   // a slow swell in
+    master.gain.linearRampToValueAtTime(1, t + 1.5);
     master.connect(ac.destination);
     beatBus = ac.createGain(); beatBus.gain.value = beatMaster.on ? beatMaster.vol / 100 : 0; beatBus.connect(master);
     noiseBus = ac.createGain(); noiseBus.gain.value = noiseMaster.on ? noiseMaster.vol / 100 : 0; noiseBus.connect(master);
     playing = true;
     syncVoices(); syncNoise();
-  } catch (e) { $('presetStatus').textContent = 'Audio could not start in this browser. Try desktop Chrome, Edge, Firefox or Safari.'; }
+  } catch (e) { $('hint').textContent = 'Audio could not start in this browser. Try desktop Chrome, Edge, Firefox or Safari.'; $('hint').classList.add('warn'); }
 }
 function stopAudio() {
   if (!ac || !master) return;
   const t = ac.currentTime, m = master;
   m.gain.cancelScheduledValues(t);
   m.gain.setValueAtTime(m.gain.value, t);
-  m.gain.linearRampToValueAtTime(0, t + 2.5);   // and a slow fade out
-  for (const v of beatVoices.values()) { v.l.stop(t + 2.6); v.r.stop(t + 2.6); }
+  m.gain.linearRampToValueAtTime(0, t + 1);
+  for (const v of beatVoices.values()) { v.l.stop(t + 1.1); v.r.stop(t + 1.1); }
   beatVoices.clear();
-  for (const k of Object.keys(noisePlay)) { noisePlay[k].src.stop(t + 2.6); delete noisePlay[k]; }
-  setTimeout(() => { try { m.disconnect(); } catch (e) {} }, 2900);
+  for (const k of Object.keys(noisePlay)) { noisePlay[k].src.stop(t + 1.1); delete noisePlay[k]; }
+  setTimeout(() => { try { m.disconnect(); } catch (e) {} }, 1400);
   master = null; beatBus = null; noiseBus = null; playing = false;
 }
 function syncVoices() {
@@ -1253,14 +928,13 @@ function syncVoices() {
       l.start(); r.start();
       v = { l, r, g }; beatVoices.set(n.slot, v);
     }
-    const glide = gliding ? 0.45 : 0.03;   // pitch follows a drag closely, but glides when a preset loads
-    v.l.frequency.setTargetAtTime(n.carrier, t, glide);
-    v.r.frequency.setTargetAtTime(n.carrier + n.beat, t, glide);
-    v.g.gain.setTargetAtTime(n.muted || n.oob ? 0 : n.vol / 1000, t, 0.25);   // mutes and level changes ease in and out   // slider 100 = 0.1 gain; mute keeps the slider value
+    v.l.frequency.setTargetAtTime(n.carrier, t, 0.03);
+    v.r.frequency.setTargetAtTime(n.carrier + n.beat, t, 0.03);
+    v.g.gain.setTargetAtTime(n.muted ? 0 : n.vol / 1000, t, 0.05);   // slider 100 = 0.1 gain; mute keeps the slider value
   }
 }
-function syncMaster() { if (beatBus) beatBus.gain.setTargetAtTime(beatMaster.on ? beatMaster.vol / 100 : 0, ac.currentTime, 0.3); }
-function syncNoiseMaster() { if (noiseBus) noiseBus.gain.setTargetAtTime(noiseMaster.on ? noiseMaster.vol / 100 : 0, ac.currentTime, 0.3); }
+function syncMaster() { if (beatBus) beatBus.gain.setTargetAtTime(beatMaster.on ? beatMaster.vol / 100 : 0, ac.currentTime, 0.06); }
+function syncNoiseMaster() { if (noiseBus) noiseBus.gain.setTargetAtTime(noiseMaster.on ? noiseMaster.vol / 100 : 0, ac.currentTime, 0.06); }
 
 // Looping stereo noise, generated separately for each ear, with a crossfaded loop point
 function makeNoise(type) {
@@ -1294,7 +968,7 @@ function syncNoise() {
     let cur = noisePlay[nt.type];
     if (cur && !want) {
       cur.g.gain.cancelScheduledValues(t); cur.g.gain.setValueAtTime(cur.g.gain.value, t);
-      cur.g.gain.linearRampToValueAtTime(0, t + 1.5); cur.src.stop(t + 1.6);
+      cur.g.gain.linearRampToValueAtTime(0, t + 0.3); cur.src.stop(t + 0.35);
       delete noisePlay[nt.type]; continue;
     }
     if (want && !cur) {
@@ -1304,7 +978,7 @@ function syncNoise() {
       src.connect(g); g.connect(noiseBus); src.start();
       cur = noisePlay[nt.type] = { src, g };
     }
-    if (cur) cur.g.gain.setTargetAtTime((st.vol / 100) * 0.12, t, 0.35);   // slider 100 = 0.12 gain; noise fades in gently
+    if (cur) cur.g.gain.setTargetAtTime((st.vol / 100) * 0.12, t, 0.08);   // slider 100 = 0.12 gain
   }
 }
 $('play').addEventListener('click', () => {
@@ -1351,13 +1025,9 @@ const PRESETS = [
   { id: 'even-beats', group: 'Dissonant and loose', name: 'Even Beats', band: 'Theta', range: '6 Hz on every tone', chord: 'Major chord sharing one beat; the right ear drifts up to 50 cents', tones: [{ c: 120, b: 6, v: 60, m: false }, { c: 150, b: 6, v: 50, m: false }, { c: 180, b: 6, v: 50, m: false }, { c: 240, b: 6, v: 40, m: false }, { c: 300, b: 6, v: 30, m: false }] },
   { id: 'drifting-apart', group: 'Dissonant and loose', name: 'Drifting Apart', band: 'Theta', range: '3–7 Hz', chord: 'Five tones 5 Hz apart near 200 Hz, wobbling against each other', tones: [{ c: 200, b: 3, v: 45, m: false }, { c: 205, b: 4, v: 45, m: false }, { c: 210, b: 5, v: 45, m: false }, { c: 215, b: 6, v: 45, m: false }, { c: 220, b: 7, v: 45, m: false }] }
 ];
-let undoState = null, undoTimer = null, glideTimer = null;
+let undoState = null, undoTimer = null;
 function snapshotTones() { return nodes.map(n => ({ c: n.carrier, b: n.beat, v: n.vol, m: n.muted })); }
 function applyTones(list) {
-  // Tones, sliders and pitches glide to the preset instead of jumping
-  gliding = true; pad.classList.add('gliding'); $('mixer').classList.add('gliding');
-  clearTimeout(glideTimer);
-  glideTimer = setTimeout(() => { gliding = false; pad.classList.remove('gliding'); $('mixer').classList.remove('gliding'); }, 1700);
   setActiveRefs(null);
   list.forEach((t, i) => {
     const n = nodes[i];
@@ -1408,33 +1078,19 @@ function buildPresetMenu() {
   });
 }
 
-// ---- Help panel ----
-(function help() {
-  const btn = $('helpBtn'), panel = $('helpPanel');
-  const open = () => { panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); panel.focus({ preventScroll: true }); };
-  const close = () => { panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
-  panel.tabIndex = -1;
-  btn.addEventListener('click', () => panel.hidden ? open() : close());
-  document.addEventListener('pointerdown', e => { if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) close(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !panel.hidden) { close(); btn.focus(); } });
-})();
-
 // ---- Start ----
 drawGuides();
 load();
 buildToneChannels();
 buildPresetMenu();
-$('curveE').value = CURVE_E;
 buildNoiseChannels();
 buildMaster($('toneMaster'), { short: 'Tone', label: 'All tones', bg: '#E4DBFF', fg: '#1E1640', state: beatMaster, sync: syncMaster, cascade: cascadeTones });
 buildMaster($('noiseMaster'), { short: 'Noise', label: 'All noise', bg: '#E4DBFF', fg: '#1E1640', state: noiseMaster, sync: syncNoiseMaster, cascade: cascadeNoise });
 cascadeTones(); cascadeNoise();
 new ResizeObserver(skySize).observe(pad);
 skySize();
-refreshLocks();
 nodes.forEach(placeNode);
 updateRings();
-updateCurveNote();
 </script>
 </body>
 </html>

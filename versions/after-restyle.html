@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Binaural Beat Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --void:#05040C;
+  --deep:#0B0920;
+  --glass:rgba(160,150,255,.055);
+  --glass-edge:rgba(190,180,255,.14);
+  --ink:#ECE8FF;
+  --muted:#9C97C8;
+  --faint:rgba(200,190,255,.10);
+  --aura:#B69CFF;
+  --tide:#5EE7F2;
+  --panel:#0B0920;
+  --line:rgba(200,190,255,.12);
+  --display:"Cormorant Garamond","Iowan Old Style",Georgia,serif;
+  --sans:"Outfit",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;background:var(--void)}
+body{
+  margin:0;min-height:100%;color:var(--ink);font-family:var(--sans);font-weight:300;font-size:16px;line-height:1.55;
+  background:
+    radial-gradient(ellipse 60% 45% at 18% 12%, rgba(120,70,220,.28), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 30%, rgba(40,170,200,.18), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 60% 95%, rgba(210,70,170,.16), transparent 70%),
+    var(--void);
+  background-attachment:fixed;
+}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+#stars i{position:absolute;border-radius:50%;background:#fff;opacity:var(--o)}
+body.playing #stars i.tw{animation:twinkle var(--d) ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:var(--o)}to{opacity:.05}}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:36px 22px 48px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+h1{
+  font-family:var(--display);font-weight:300;font-size:clamp(2.2rem,4.5vw,3.3rem);line-height:1.05;margin:0;letter-spacing:.01em;
+  background:linear-gradient(100deg,#F4EEFF 10%,#C9B4FF 45%,#7FE9F5 90%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 40px rgba(182,156,255,.25);
+}
+.hint{font-size:.9rem;color:var(--muted);margin:10px 0 0;max-width:64ch}
+.hint.warn{color:#FF9BB5}
+.controls{display:flex;gap:8px;align-items:center}
+button{font:inherit;font-weight:500;font-size:.95rem;padding:8px 18px;border-radius:999px;border:1px solid var(--glass-edge);background:var(--glass);color:var(--ink);cursor:pointer;transition:border-color .2s,box-shadow .2s}
+button:hover{border-color:rgba(200,190,255,.35)}
+button.primary{
+  min-width:120px;padding:11px 26px;border:none;color:#0A0818;font-weight:600;letter-spacing:.04em;
+  background:linear-gradient(120deg,#D7C6FF,#9C7CFF 45%,#5EE7F2);
+  box-shadow:0 0 24px rgba(156,124,255,.45),0 0 60px rgba(94,231,242,.18);
+}
+body.playing button.primary{animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{0%,100%{box-shadow:0 0 22px rgba(156,124,255,.45),0 0 50px rgba(94,231,242,.15)}50%{box-shadow:0 0 34px rgba(156,124,255,.7),0 0 90px rgba(94,231,242,.3)}}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--tide);outline-offset:3px}
+.body{display:flex;gap:26px;align-items:flex-start;margin-top:28px}
+.pad-wrap{flex:0 1 480px;min-width:0}
+.pad{
+  position:relative;width:100%;aspect-ratio:1/1;border-radius:18px;overflow:hidden;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none;
+  background:
+    radial-gradient(circle at 50% 55%, rgba(120,90,255,.16), transparent 65%),
+    radial-gradient(circle at 20% 15%, rgba(94,231,242,.08), transparent 45%),
+    linear-gradient(180deg,#0E0B26,#07061A);
+  border:1px solid var(--glass-edge);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.6),0 0 40px rgba(120,90,255,.12);
+}
+.band{position:absolute;top:0;bottom:0;pointer-events:none}
+.band.edge{border-left:1px solid var(--faint)}
+.band span{position:absolute;bottom:8px;left:7px;font-size:.7rem;color:var(--muted);white-space:nowrap;letter-spacing:.06em;opacity:.8}
+.oct{position:absolute;left:0;right:0;border-top:1px solid var(--faint);pointer-events:none}
+.oct span{position:absolute;right:8px;top:3px;font-size:.7rem;color:var(--muted);opacity:.8;letter-spacing:.03em}
+.xline,.yline{position:absolute;pointer-events:none;z-index:3;display:none}
+.xline{top:0;bottom:0;width:0;border-left:1px solid var(--c);box-shadow:0 0 8px var(--c),0 0 18px var(--c)}
+.yline{left:0;right:0;height:0;border-top:1px solid var(--c);box-shadow:0 0 8px var(--c),0 0 18px var(--c)}
+.pad.live .xline,.pad.live .yline,.pad.live .tag{display:block}
+.tag{position:absolute;z-index:1000;display:none;pointer-events:none;font-size:.74rem;font-weight:600;line-height:1;padding:5px 9px;border-radius:999px;background:var(--c);color:var(--t);white-space:nowrap;box-shadow:0 0 14px var(--c)}
+.xtag{top:8px;transform:translateX(-50%)}
+.xtag.at-left{transform:translateX(0)}
+.xtag.at-right{transform:translateX(-100%)}
+.ytag{left:8px;transform:translateY(-50%)}
+.ytag.at-top{transform:translateY(0)}
+.ytag.at-bottom{transform:translateY(-100%)}
+.refs{position:absolute;inset:0;pointer-events:none;z-index:4;display:none}
+.refs.show{display:block}
+.ref{position:absolute;left:0;right:0;height:0;opacity:.85}
+.ref.oct{border-top:1px solid var(--rc);box-shadow:0 0 6px var(--rc)}
+.ref.fifth{border-top:1px dashed var(--rc)}
+.ref.third{border-top:1px dotted var(--rc)}
+.ref span{position:absolute;right:8px;transform:translateY(-50%);font-size:.66rem;font-weight:500;letter-spacing:.04em;line-height:1;padding:4px 8px;border-radius:999px;background:rgba(8,6,24,.85);color:var(--rc);border:1px solid var(--rc);white-space:nowrap;backdrop-filter:blur(4px)}
+.ref.M3 span{right:86px}
+.ref.hit{opacity:1;border-top-width:2px;box-shadow:0 0 10px var(--rc),0 0 22px var(--rc)}
+.ref.hit span{background:var(--rc);color:var(--rt);box-shadow:0 0 14px var(--rc)}
+.ref.near-top span{transform:translateY(0)}
+.ref.near-bottom span{transform:translateY(-100%)}
+/* Glowing orbs */
+.node,.ch .n{
+  background:radial-gradient(circle at 34% 28%,#FFFFFF 0%,color-mix(in srgb,var(--nc) 55%,#fff) 18%,var(--nc) 48%,color-mix(in srgb,var(--nc) 45%,#000) 100%);
+}
+.node{
+  position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:.86rem;cursor:grab;touch-action:none;
+  text-shadow:0 0 4px rgba(0,0,0,.35);
+  box-shadow:0 0 10px var(--nc),0 0 26px color-mix(in srgb,var(--nc) 60%,transparent),0 0 60px color-mix(in srgb,var(--nc) 25%,transparent);
+  transition:box-shadow .25s;
+}
+.node.locked{
+  box-shadow:0 0 0 2px #07061A,0 0 0 3.5px var(--ring),0 0 16px var(--ring),0 0 10px var(--nc),0 0 30px color-mix(in srgb,var(--nc) 55%,transparent);
+}
+body.playing .node{animation:orb 4.5s ease-in-out infinite}
+body.playing .node:nth-child(odd){animation-duration:5.5s}
+@keyframes orb{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25) saturate(1.15)}}
+.node.dragging{cursor:grabbing;filter:brightness(1.3)}
+.node:focus-visible{outline:1.5px solid rgba(255,255,255,.8);outline-offset:4px}
+.axis-note{display:flex;justify-content:space-between;font-size:.74rem;color:var(--muted);margin-top:8px;letter-spacing:.04em}
+/* Mixer as a glass panel */
+.mixer{
+  display:flex;flex-direction:column;gap:18px;min-width:0;padding:18px 18px 16px;border-radius:18px;
+  background:linear-gradient(180deg,rgba(160,150,255,.07),rgba(160,150,255,.025));
+  border:1px solid var(--glass-edge);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.mixrow{display:flex;gap:8px;flex-wrap:wrap}
+.noise-row{border-top:1px solid var(--line);padding-top:16px}
+.noise-row .ch input[type=range]{height:120px}
+.ch{display:flex;flex-direction:column;align-items:center;gap:8px;width:72px}
+.ch .n{
+  width:28px;height:28px;padding:0;border-radius:50%;border:none;font:inherit;font-size:.76rem;font-weight:600;display:grid;place-items:center;cursor:pointer;
+  box-shadow:0 0 8px var(--nc),0 0 18px color-mix(in srgb,var(--nc) 45%,transparent);
+}
+.ch .n[aria-pressed="true"]{box-shadow:0 0 0 2px #0B0920,0 0 0 3.5px var(--rc),0 0 14px var(--rc),0 0 22px color-mix(in srgb,var(--nc) 50%,transparent)}
+.ch input[type=range]{writing-mode:vertical-lr;direction:rtl;width:24px;height:240px;margin:0}
+.ch .read{font-size:.7rem;color:var(--muted);text-align:center;line-height:1.4;white-space:nowrap}
+.ch button:not(.n){font-size:.72rem;padding:3px 10px;color:var(--muted)}
+.ch.group-start{border-left:1px solid var(--line);padding-left:10px;margin-left:2px}
+.ch.extra .n{--nc:var(--cbg);--rc:var(--cbg);color:var(--cfg)}
+.ch.extra .n[aria-pressed="false"]{background:transparent;color:var(--muted);border:1px dashed color-mix(in srgb,var(--cbg) 60%,transparent);box-shadow:none}
+.ch.extra .n[aria-pressed="true"]{box-shadow:0 0 10px var(--cbg),0 0 24px color-mix(in srgb,var(--cbg) 45%,transparent)}
+.ch.extra .read{color:var(--ink)}
+.mixer-empty{font-size:.88rem;color:var(--muted);padding-top:6px;max-width:15em}
+.foot{font-size:.8rem;color:var(--muted);margin-top:28px;max-width:68ch;opacity:.85}
+@media (max-width:680px){.body{flex-direction:column}.pad-wrap{flex:none;width:100%}.mixer{width:100%}.ch input[type=range]{height:180px}}
+@media (prefers-reduced-motion:reduce){body.playing .node,body.playing button.primary,body.playing #stars i.tw{animation:none}}
+</style>
+</head>
+<body>
+<div id="stars" aria-hidden="true"></div>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Binaural Beat Designer</h1>
+      <p class="hint" id="hint">Click the square to add a tone, up to five. Drag a tone to change it: left and right sets the beat, up and down sets the carrier tone. Double-click a tone to remove it. Hover a numbered circle above a slider to see that tone's thirds, fifths and octaves, or click it to keep them showing. While reference lines are showing, tones you move snap onto them.</p>
+    </div>
+    <div class="controls">
+      <button class="primary" id="play">Play</button>
+    </div>
+  </header>
+  <div class="body">
+    <div class="pad-wrap">
+      <div class="pad" id="pad">
+        <div class="xline" id="xline"></div>
+        <div class="yline" id="yline"></div>
+        <span class="tag xtag" id="xtag"></span>
+        <span class="tag ytag" id="ytag"></span>
+      </div>
+      <div class="axis-note"><span>Beat 0.5 Hz</span><span>30 Hz</span></div>
+    </div>
+    <div class="mixer"><div class="mixrow" id="toneRow"></div><div class="mixrow noise-row" id="noiseRow"></div></div>
+  </div>
+  <p class="foot">Use headphones. Each tone plays its carrier in the left ear and the carrier plus the beat in the right ear. The All slider next to the tones sets their overall level; the All slider in the noise row does the same for noise. W, P and Br add white, pink and brown noise, which can play at the same time. Click a circle to turn that channel on or off. Only one tone's reference lines can be switched on at a time. When they are, tones sitting on those lines get a ring in its color and move with it. Your settings are saved in this browser.</p>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const COLORS = [
+  { c: '#FF4F79', t: '#FFFFFF', name: 'red' },
+  { c: '#3CF0A6', t: '#06201A', name: 'green' },
+  { c: '#4F9DFF', t: '#FFFFFF', name: 'blue' },
+  { c: '#FFD84A', t: '#2A1E00', name: 'yellow' },
+  { c: '#FF9A3D', t: '#2A1200', name: 'orange' }
+];
+const BEAT_MIN = 0.5, BEAT_MAX = 30, CAR_MIN = 50, CAR_MAX = 500, MAX_NODES = 5;
+const HINT = 'Click the square to add a tone, up to five. Drag a tone to change it: left and right sets the beat, up and down sets the carrier tone. Double-click a tone to remove it. Hover a numbered circle above a slider to see that tone\'s thirds, fifths and octaves, or click it to keep them showing. While reference lines are showing, tones you move snap onto them.';
+const STORE = 'beat-designer-tones';
+const pad = $('pad');
+let nodes = [], zc = 0, dragNode = null, liveTimer = null, snapHit = null;
+const SNAP_PX = 10;   // how close (in pixels) a tone must come to a reference line to snap onto it
+let ac = null, master = null, beatVoices = new Map(), playing = false;
+// Master level for all binaural tones, and three noise channels that can play together
+const beatMaster = { on: true, vol: 100 };
+const NOISE_TYPES = [
+  { type: 'white', short: 'W',  label: 'White', bg: '#E9E6FF', fg: '#1A1633' },
+  { type: 'pink',  short: 'P',  label: 'Pink',  bg: '#FF8FCB', fg: '#2A0A1C' },
+  { type: 'brown', short: 'Br', label: 'Brown', bg: '#D4924F', fg: '#241000' }
+];
+const noises = { white: { on: false, vol: 30 }, pink: { on: false, vol: 30 }, brown: { on: false, vol: 30 } };
+let beatBus = null, noiseBus = null;
+const noiseMaster = { on: true, vol: 100 };
+const noisePlay = {};      // type -> { src, g } while playing
+const noiseBuffers = {};
+
+const snap = (v, st) => Math.round(v / st) * st;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const fxToBeat = fx => clamp(snap(BEAT_MIN + fx * (BEAT_MAX - BEAT_MIN), 0.5), BEAT_MIN, BEAT_MAX);
+const beatToFx = bt => (bt - BEAT_MIN) / (BEAT_MAX - BEAT_MIN);
+// Carrier uses a log scale so each octave takes the same height
+const fyToCar = fy => clamp(snap(CAR_MAX * Math.pow(CAR_MIN / CAR_MAX, fy), 5), CAR_MIN, CAR_MAX);
+const carToFy = cr => Math.log(cr / CAR_MAX) / Math.log(CAR_MIN / CAR_MAX);
+const fmt = v => (Math.round(v * 10) / 10).toString();
+
+function hint(msg, warn) { const h = $('hint'); h.textContent = msg; h.className = 'hint' + (warn ? ' warn' : ''); }
+
+function drawGuides() {
+  [[0.5, 'Delta'], [4, 'Theta'], [8, 'Alpha'], [13, 'Beta']].forEach(([f, name]) => {
+    const d = document.createElement('div');
+    d.className = 'band' + (f > BEAT_MIN ? ' edge' : '');
+    d.style.left = (beatToFx(f) * 100) + '%';
+    d.innerHTML = '<span>' + name + '</span>';
+    pad.appendChild(d);
+  });
+  [[440, 'A4 440 Hz'], [220, 'A3 220 Hz'], [110, 'A2 110 Hz'], [55, 'A1 55 Hz']].forEach(([f, name]) => {
+    const d = document.createElement('div');
+    d.className = 'oct';
+    d.style.top = (carToFy(f) * 100) + '%';
+    d.innerHTML = '<span>' + name + '</span>';
+    pad.appendChild(d);
+  });
+}
+
+// ---- Live axis lines through the active tone ----
+function showLines(n) {
+  const col = COLORS[n.slot], fx = beatToFx(n.beat), fy = carToFy(n.carrier);
+  pad.style.setProperty('--c', col.c); pad.style.setProperty('--t', col.t);
+  $('xline').style.left = (fx * 100) + '%';
+  $('yline').style.top = (fy * 100) + '%';
+  const xt = $('xtag'), yt = $('ytag');
+  xt.textContent = fmt(n.beat) + ' Hz beat';
+  yt.textContent = fmt(n.carrier) + ' Hz';
+  xt.style.left = (fx * 100) + '%';
+  yt.style.top = (fy * 100) + '%';
+  xt.className = 'tag xtag' + (fx < 0.12 ? ' at-left' : fx > 0.88 ? ' at-right' : '');
+  yt.className = 'tag ytag' + (fy < 0.06 ? ' at-top' : fy > 0.94 ? ' at-bottom' : '');
+  pad.classList.add('live');
+}
+function hideLines() { pad.classList.remove('live'); }
+
+// ---- Interval reference lines (thirds, fifths, octaves of a tone's carrier) ----
+const INTERVALS = [
+  { r: 5 / 4, name: 'maj third', key: 'M3', cls: 'third' },
+  { r: 6 / 5, name: 'min third', key: 'm3', cls: 'third' },
+  { r: 3 / 2, name: 'fifth',     key: 'P5', cls: 'fifth' },
+  { r: 1,     name: 'octave',    key: 'P8', cls: 'oct' }
+];
+function refList(carrier) {
+  const out = [];
+  for (let k = -4; k <= 4; k++) {
+    for (const iv of INTERVALS) {
+      if (iv.r === 1 && k === 0) continue;            // skip the tone itself
+      const f = carrier * iv.r * Math.pow(2, k);
+      if (f < CAR_MIN - 0.01 || f > CAR_MAX + 0.01) continue;
+      out.push({ f, name: iv.name, key: iv.key, cls: iv.cls });
+    }
+  }
+  return out.sort((a, b) => b.f - a.f);
+}
+function drawRefs(n) {
+  if (!n.refEl) return;
+  const show = n.refOn || n.hover;
+  n.refEl.classList.toggle('show', !!show);
+  if (!show) return;
+  n.refEl.style.setProperty('--rc', COLORS[n.slot].c);
+  n.refEl.style.setProperty('--rt', COLORS[n.slot].t);
+  n.refEl.innerHTML = '';
+  refList(n.carrier).forEach(rf => {
+    const fy = carToFy(rf.f);
+    const d = document.createElement('div');
+    const isHit = snapHit && snapHit.slot === n.slot && Math.abs(snapHit.f - rf.f) < 1e-6;
+    d.className = 'ref ' + rf.cls + ' ' + rf.key + (isHit ? ' hit' : '') + (fy < 0.04 ? ' near-top' : fy > 0.96 ? ' near-bottom' : '');
+    d.style.top = (fy * 100) + '%';
+    d.innerHTML = '<span>' + rf.name + '</span>';
+    n.refEl.appendChild(d);
+  });
+}
+
+// Reference lines from every tone whose guides are showing, except the tone being moved
+function activeRefs(except) {
+  const ex = except instanceof Set ? except : new Set(except ? [except] : []);
+  const out = [];
+  for (const m of nodes) {
+    if (ex.has(m) || !(m.refOn || m.hover)) continue;
+    refList(m.carrier).forEach(r => out.push({ f: r.f, name: r.name, slot: m.slot }));
+  }
+  return out;
+}
+// Carrier for a vertical position: snaps onto a nearby reference line if guides are showing,
+// otherwise to the usual 5 Hz steps
+function carrierFor(fy, n) {
+  const h = pad.getBoundingClientRect().height || 1;
+  let best = null, bestPx = SNAP_PX;
+  for (const r of activeRefs(n)) {
+    const px = Math.abs(carToFy(r.f) - fy) * h;
+    if (px <= bestPx) { best = r; bestPx = px; }
+  }
+  return best ? { car: best.f, hit: best } : { car: fyToCar(fy), hit: null };
+}
+// ---- Locked tones ----
+// A tone is locked to a parent when the parent's reference lines are switched on (clicked, not just
+// hovered) and the tone sits exactly on one of those lines. Moving the parent moves its locked tones
+// with it, keeping every interval, and chains through locked tones that have their own lines on.
+const LOCK_TOL = 0.01;
+function lockedTo(parent, child) {
+  if (!parent.refOn || child === parent) return false;
+  return refList(parent.carrier).some(r => Math.abs(r.f - child.carrier) < LOCK_TOL);
+}
+function lockGroup(root) {
+  const seen = new Set([root]), queue = [root];
+  while (queue.length) {
+    const p = queue.shift();
+    if (!p.refOn) continue;
+    for (const m of nodes) if (!seen.has(m) && lockedTo(p, m)) { seen.add(m); queue.push(m); }
+  }
+  return seen;
+}
+function beginGroup(n) {
+  n.groupSet = lockGroup(n);
+  n.group = [...n.groupSet].filter(m => m !== n).map(m => ({ m, ratio: m.carrier / n.carrier }));
+  // The group can only move as far as its highest and lowest tones allow
+  let lo = CAR_MIN, hi = CAR_MAX;
+  for (const g of n.group) { lo = Math.max(lo, CAR_MIN / g.ratio); hi = Math.min(hi, CAR_MAX / g.ratio); }
+  n.groupLo = lo; n.groupHi = hi;
+}
+function moveGroup(n, car) {
+  n.carrier = clamp(car, n.groupLo, n.groupHi);
+  for (const g of n.group) { g.m.carrier = n.carrier * g.ratio; placeNode(g.m); }
+}
+// Ring in the parent's color around each locked tone
+// Only one tone's reference lines can be switched on at a time
+function setActiveRefs(target) {
+  for (const m of nodes) {
+    m.refOn = m === target;
+    if (m.dot) m.dot.setAttribute('aria-pressed', m.refOn);
+    drawRefs(m);
+  }
+  save(); updateRings();
+}
+function updateRings() {
+  for (const n of nodes) {
+    // The active tone gets a ring in its own color (it's the unison of its own intervals)
+    const p = n.refOn ? n : nodes.find(q => lockedTo(q, n));
+    n.el.classList.toggle('locked', !!p);
+    if (p) n.el.style.setProperty('--ring', COLORS[p.slot].c);
+  }
+}
+
+function setSnap(hit) {
+  const same = (!hit && !snapHit) || (hit && snapHit && hit.slot === snapHit.slot && hit.f === snapHit.f);
+  snapHit = hit;
+  if (!same) nodes.forEach(drawRefs);
+}
+
+function label(n) { return 'Tone ' + (n.slot + 1) + ': carrier ' + fmt(n.carrier) + ' Hz, beat ' + fmt(n.beat) + ' Hz'; }
+
+function placeNode(n) {
+  n.el.style.left = (beatToFx(n.beat) * 100) + '%';
+  n.el.style.top = (carToFy(n.carrier) * 100) + '%';
+  n.el.style.zIndex = 10 + n.z;
+  n.el.title = label(n);
+  n.el.setAttribute('aria-label', label(n) + '. Arrow keys move it. Delete removes it.');
+  if (n.read) n.read.innerHTML = fmt(n.carrier) + ' Hz<br>' + fmt(n.beat) + ' Hz beat';
+  if (dragNode === n) showLines(n);
+  drawRefs(n);
+}
+
+function addNode(carrier, beat, vol, quiet, refOn) {
+  if (nodes.length >= MAX_NODES) { hint('All five tones are in use. Double-click a tone or use Remove to free one up.', true); return null; }
+  const used = new Set(nodes.map(n => n.slot));
+  let slot = 0; while (used.has(slot)) slot++;
+  const col = COLORS[slot];
+  const n = { slot, carrier, beat, vol, z: ++zc, refOn: !!refOn, hover: false };
+  const el = document.createElement('div');
+  el.className = 'node'; el.tabIndex = 0; el.textContent = slot + 1;
+  el.style.setProperty('--nc', col.c); el.style.color = col.t;
+  el.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    // Double-click removes: two quick clicks where the first one didn't drag the tone
+    if (n.lastClick && performance.now() - n.lastClick < 350) { removeNode(n); return; }
+    startDrag(n, e);
+  });
+  el.addEventListener('keydown', e => {
+    const k = e.key;
+    if (k === 'ArrowLeft') n.beat = clamp(n.beat - 0.5, BEAT_MIN, BEAT_MAX);
+    else if (k === 'ArrowRight') n.beat = clamp(n.beat + 0.5, BEAT_MIN, BEAT_MAX);
+    else if (k === 'ArrowUp' || k === 'ArrowDown') {
+      beginGroup(n);
+      const up = k === 'ArrowUp', c = n.carrier;
+      let next = up ? Math.floor(c / 5 + 1e-9) * 5 + 5 : Math.ceil(c / 5 - 1e-9) * 5 - 5;   // next 5 Hz step
+      for (const r of activeRefs(n.groupSet)) {
+        if (up && r.f > c + 1e-6 && r.f < next) next = r.f;
+        if (!up && r.f < c - 1e-6 && r.f > next) next = r.f;
+      }
+      moveGroup(n, next);
+    }
+    else if (k === 'Delete' || k === 'Backspace') { removeNode(n); return; }
+    else return;
+    e.preventDefault(); placeNode(n); changed();
+    showLines(n); clearTimeout(liveTimer); liveTimer = setTimeout(() => { if (!dragNode) hideLines(); }, 900);
+  });
+  n.el = el;
+  n.refEl = document.createElement('div'); n.refEl.className = 'refs';
+  pad.appendChild(n.refEl);
+  pad.appendChild(el);
+  nodes.push(n);
+  buildMixer();
+  placeNode(n);
+  if (!quiet) { hint(HINT); changed(); }
+  return n;
+}
+
+function removeNode(n) {
+  if (dragNode === n) { dragNode = null; hideLines(); }
+  nodes = nodes.filter(x => x !== n);
+  n.el.remove();
+  if (n.refEl) n.refEl.remove();
+  buildMixer();
+  hint(HINT);
+  changed();
+}
+
+function buildMixer() {
+  const mx = $('toneRow'); mx.innerHTML = '';
+  if (!nodes.length) { mx.innerHTML = '<div class="mixer-empty">Volume sliders appear here as you add tones.</div>'; appendExtras(mx); return; }
+  [...nodes].sort((x, y) => x.slot - y.slot).forEach(n => {
+    const col = COLORS[n.slot];
+    const ch = document.createElement('div'); ch.className = 'ch';
+    const dot = document.createElement('button');
+    dot.className = 'n'; dot.textContent = n.slot + 1;
+    dot.style.setProperty('--nc', col.c); dot.style.color = col.t; dot.style.setProperty('--rc', col.c);
+    dot.setAttribute('aria-pressed', n.refOn);
+    dot.setAttribute('aria-label', 'Show thirds, fifths and octaves for tone ' + (n.slot + 1));
+    dot.title = 'Hover to preview, click to keep thirds, fifths and octaves showing';
+    dot.addEventListener('mouseenter', () => { n.hover = true; drawRefs(n); });
+    dot.addEventListener('mouseleave', () => { n.hover = false; drawRefs(n); });
+    dot.addEventListener('focus', () => { n.hover = true; drawRefs(n); });
+    dot.addEventListener('blur', () => { n.hover = false; drawRefs(n); });
+    dot.addEventListener('click', () => setActiveRefs(n.refOn ? null : n));
+    n.dot = dot;
+    ch.appendChild(dot);
+    const r = document.createElement('input');
+    r.type = 'range'; r.min = 0; r.max = 100; r.step = 1; r.value = n.vol;
+    r.style.accentColor = col.c;
+    r.setAttribute('aria-label', 'Volume for tone ' + (n.slot + 1) + ' (' + col.name + ')');
+    r.addEventListener('input', () => { n.vol = +r.value; changed(); });
+    const read = document.createElement('div'); read.className = 'read';
+    const rm = document.createElement('button'); rm.textContent = 'Remove';
+    rm.setAttribute('aria-label', 'Remove tone ' + (n.slot + 1));
+    rm.addEventListener('click', () => removeNode(n));
+    ch.append(r, read, rm);
+    n.read = read;
+    mx.appendChild(ch);
+    placeNode(n);
+  });
+  appendExtras(mx);
+}
+
+// ---- Master and noise channels in the mixer ----
+let extraEls = null;
+function extraChannel(opts) {
+  const ch = document.createElement('div'); ch.className = 'ch extra' + (opts.groupStart ? ' group-start' : '');
+  ch.style.setProperty('--cbg', opts.bg); ch.style.setProperty('--cfg', opts.fg);
+  const dot = document.createElement('button');
+  dot.className = 'n'; dot.textContent = opts.short;
+  dot.setAttribute('aria-pressed', opts.state.on);
+  dot.setAttribute('aria-label', opts.label + ' on or off');
+  dot.title = 'Click to turn ' + opts.label.toLowerCase() + ' on or off';
+  dot.addEventListener('click', () => { opts.state.on = !opts.state.on; dot.setAttribute('aria-pressed', opts.state.on); save(); opts.sync(); });
+  const r = document.createElement('input');
+  r.type = 'range'; r.min = 0; r.max = 100; r.step = 1; r.value = opts.state.vol;
+  r.style.accentColor = opts.accent || opts.bg;
+  r.setAttribute('aria-label', opts.label + ' volume');
+  r.addEventListener('input', () => { opts.state.vol = +r.value; save(); opts.sync(); });
+  const read = document.createElement('div'); read.className = 'read'; read.textContent = opts.label;
+  ch.append(dot, r, read);
+  return ch;
+}
+function appendExtras(mx) {
+  if (!extraEls) {
+    extraEls = [extraChannel({ short: 'All', label: 'All tones', bg: '#B69CFF', fg: '#140A33', accent: '#B69CFF', state: beatMaster, sync: syncMaster, groupStart: true })];
+    NOISE_TYPES.forEach((nt, i) => extraEls.push(extraChannel({
+      short: nt.short, label: nt.label + ' noise', bg: nt.bg, fg: nt.fg, accent: nt.bg,
+      state: noises[nt.type], sync: syncNoise, groupStart: false
+    })));
+    extraEls.forEach((el, i) => { if (i > 0) el.querySelector('.read').textContent = NOISE_TYPES[i - 1].label; });
+    extraEls.push(extraChannel({ short: 'All', label: 'All noise', bg: '#5EE7F2', fg: '#032126', accent: '#5EE7F2', state: noiseMaster, sync: syncNoiseMaster, groupStart: true }));
+  }
+  mx.appendChild(extraEls[0]);                       // All tones, next to the tone sliders
+  const nr = $('noiseRow');
+  if (!nr.children.length) extraEls.slice(1).forEach(el => nr.appendChild(el));   // White, Pink, Brown, All noise
+}
+
+// Builds a looping stereo noise buffer. Left and right are generated separately so the
+// noise sounds wide and doesn't interfere with the beats. The loop point is crossfaded.
+function makeNoise(type) {
+  const sr = ac.sampleRate, N = sr * 6, F = Math.floor(sr * 0.05);
+  const buf = ac.createBuffer(2, N, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const raw = new Float32Array(N + F);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, last = 0;
+    for (let i = 0; i < N + F; i++) {
+      const w = Math.random() * 2 - 1;
+      if (type === 'pink') {          // Paul Kellet's pink noise filter
+        b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759;
+        b2 = 0.96900 * b2 + w * 0.1538520; b3 = 0.86650 * b3 + w * 0.3104856;
+        b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
+        raw[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
+      } else if (type === 'brown') {  // leaky integrator
+        last = (last + 0.02 * w) / 1.02; raw[i] = last * 3.5;
+      } else raw[i] = w;
+    }
+    const out = buf.getChannelData(ch);
+    for (let i = 0; i < N; i++) out[i] = raw[i];
+    for (let i = 0; i < F; i++) { const k = i / F; out[i] = raw[i] * k + raw[N + i] * (1 - k); }
+  }
+  return buf;
+}
+
+function syncNoise() {
+  if (!playing || !master || !noiseBus) return;
+  const t = ac.currentTime;
+  for (const nt of NOISE_TYPES) {
+    const st = noises[nt.type], want = st.on && st.vol > 0;
+    let cur = noisePlay[nt.type];
+    if (cur && !want) {
+      cur.g.gain.cancelScheduledValues(t); cur.g.gain.setValueAtTime(cur.g.gain.value, t);
+      cur.g.gain.linearRampToValueAtTime(0, t + 0.3); cur.src.stop(t + 0.35);
+      delete noisePlay[nt.type]; continue;
+    }
+    if (want && !cur) {
+      if (!noiseBuffers[nt.type]) noiseBuffers[nt.type] = makeNoise(nt.type);
+      const src = ac.createBufferSource(); src.buffer = noiseBuffers[nt.type]; src.loop = true;
+      const g = ac.createGain(); g.gain.setValueAtTime(0, t);
+      src.connect(g); g.connect(noiseBus); src.start();
+      cur = noisePlay[nt.type] = { src, g };
+    }
+    if (cur) cur.g.gain.setTargetAtTime((st.vol / 100) * 0.12, t, 0.08);   // slider 100 = 0.12 gain
+  }
+}
+function syncNoiseMaster() {
+  if (!noiseBus) return;
+  noiseBus.gain.setTargetAtTime(noiseMaster.on ? noiseMaster.vol / 100 : 0, ac.currentTime, 0.06);
+}
+function syncMaster() {
+  if (!beatBus) return;
+  beatBus.gain.setTargetAtTime(beatMaster.on ? beatMaster.vol / 100 : 0, ac.currentTime, 0.06);
+}
+
+// ---- Dragging ----
+function posFromEvent(e) {
+  const r = pad.getBoundingClientRect();
+  return { fx: clamp((e.clientX - r.left) / r.width, 0, 1), fy: clamp((e.clientY - r.top) / r.height, 0, 1) };
+}
+function startDrag(n, e) {
+  dragNode = n; n.moved = false; n.el.classList.add('dragging');
+  beginGroup(n);
+  clearTimeout(liveTimer);
+  try { pad.setPointerCapture(e.pointerId); } catch (err) {}
+  n.el.focus({ preventScroll: true });
+  showLines(n);
+}
+pad.addEventListener('pointerdown', e => {
+  if (e.button !== undefined && e.button !== 0) return;
+  const { fx, fy } = posFromEvent(e);
+  const { car, hit } = carrierFor(fy, null);
+  const n = addNode(car, fxToBeat(fx), 50);
+  if (n) { startDrag(n, e); setSnap(hit); showLines(n); }
+});
+pad.addEventListener('pointermove', e => {
+  if (!dragNode) return;
+  const { fx, fy } = posFromEvent(e);
+  const bt = fxToBeat(fx);
+  let { car, hit } = carrierFor(fy, dragNode.groupSet);
+  const bounded = clamp(car, dragNode.groupLo, dragNode.groupHi);
+  if (bounded !== car) { car = bounded; hit = null; }
+  const snapChanged = (hit ? hit.slot + ':' + hit.f : '') !== (snapHit ? snapHit.slot + ':' + snapHit.f : '');
+  dragNode.moved = true;
+  if (snapChanged) setSnap(hit);
+  if (bt !== dragNode.beat || car !== dragNode.carrier || snapChanged) { dragNode.beat = bt; moveGroup(dragNode, car); placeNode(dragNode); changed(); }
+});
+const endDrag = () => {
+  if (!dragNode) return;
+  dragNode.lastClick = dragNode.moved ? 0 : performance.now();
+  dragNode.el.classList.remove('dragging'); dragNode = null; hideLines(); setSnap(null);
+};
+pad.addEventListener('pointerup', endDrag);
+pad.addEventListener('pointercancel', endDrag);
+
+// ---- Saving tones in this browser ----
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify({ tones: nodes.map(n => ({ c: n.carrier, b: n.beat, v: n.vol, s: n.slot, z: n.z, r: !!n.refOn })), noises, beatMaster, noiseMaster })); } catch (e) {}
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    const list = Array.isArray(data) ? data : (data && Array.isArray(data.tones) ? data.tones : null);
+    if (!list) return false;
+    if (data && data.noises) {
+      for (const nt of NOISE_TYPES) {
+        const v = data.noises[nt.type];
+        if (v) { noises[nt.type].on = !!v.on; noises[nt.type].vol = clamp(+v.vol || 0, 0, 100); }
+      }
+    } else if (data && data.noise && noises[data.noise.type]) {   // older single-noise format
+      noises[data.noise.type].on = !!data.noise.on;
+      noises[data.noise.type].vol = clamp(+data.noise.vol || 0, 0, 100);
+    }
+    if (data && data.noiseMaster) {
+      noiseMaster.on = data.noiseMaster.on !== false;
+      noiseMaster.vol = clamp(+data.noiseMaster.vol || 0, 0, 100);
+    }
+    if (data && data.beatMaster) {
+      beatMaster.on = data.beatMaster.on !== false;
+      beatMaster.vol = clamp(+data.beatMaster.vol || 0, 0, 100);
+    }
+    list.sort((a, b) => a.z - b.z).slice(0, MAX_NODES).forEach(t => {
+      if (typeof t.c === 'number' && typeof t.b === 'number') addNode(clamp(t.c, CAR_MIN, CAR_MAX), clamp(t.b, BEAT_MIN, BEAT_MAX), clamp(+t.v || 50, 0, 100), true, !!t.r);
+    });
+    return true;
+  } catch (e) { return false; }
+}
+function changed() { save(); syncVoices(); updateRings(); }
+
+// ---- Audio: each tone is a left/right sine pair (carrier, carrier + beat) ----
+function startAudio() {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    ac.resume();
+    master = ac.createGain();
+    const t = ac.currentTime;
+    master.gain.setValueAtTime(0, t);
+    master.gain.linearRampToValueAtTime(1, t + 1.5);
+    master.connect(ac.destination);
+    beatBus = ac.createGain();
+    beatBus.gain.value = beatMaster.on ? beatMaster.vol / 100 : 0;
+    beatBus.connect(master);
+    noiseBus = ac.createGain();
+    noiseBus.gain.value = noiseMaster.on ? noiseMaster.vol / 100 : 0;
+    noiseBus.connect(master);
+    playing = true;
+    syncVoices();
+    syncNoise();
+  } catch (e) { hint('Audio could not start in this browser. Try desktop Chrome, Edge, Firefox or Safari.', true); }
+}
+function stopAudio() {
+  if (!ac || !master) return;
+  const t = ac.currentTime, m = master;
+  m.gain.cancelScheduledValues(t);
+  m.gain.setValueAtTime(m.gain.value, t);
+  m.gain.linearRampToValueAtTime(0, t + 1);
+  for (const v of beatVoices.values()) { v.l.stop(t + 1.1); v.r.stop(t + 1.1); }
+  beatVoices.clear();
+  for (const k of Object.keys(noisePlay)) { noisePlay[k].src.stop(t + 1.1); delete noisePlay[k]; }
+  beatBus = null; noiseBus = null;
+  setTimeout(() => { try { m.disconnect(); } catch (e) {} }, 1400);
+  master = null; playing = false;
+}
+function syncVoices() {
+  if (!playing || !master || !beatBus) return;
+  const t = ac.currentTime;
+  const live = new Set(nodes.map(n => n.slot));
+  for (const [slot, v] of beatVoices) {
+    if (!live.has(slot)) { v.g.gain.setTargetAtTime(0, t, 0.05); v.l.stop(t + 0.4); v.r.stop(t + 0.4); beatVoices.delete(slot); }
+  }
+  for (const n of nodes) {
+    let v = beatVoices.get(n.slot);
+    if (!v) {
+      const merger = ac.createChannelMerger(2), g = ac.createGain();
+      g.gain.value = 0;
+      const l = ac.createOscillator(), r = ac.createOscillator();
+      l.type = r.type = 'sine';
+      l.frequency.value = n.carrier; r.frequency.value = n.carrier + n.beat;
+      l.connect(merger, 0, 0); r.connect(merger, 0, 1);
+      merger.connect(g); g.connect(beatBus);
+      l.start(); r.start();
+      v = { l, r, g }; beatVoices.set(n.slot, v);
+    }
+    v.l.frequency.setTargetAtTime(n.carrier, t, 0.03);
+    v.r.frequency.setTargetAtTime(n.carrier + n.beat, t, 0.03);
+    v.g.gain.setTargetAtTime(n.vol / 1000, t, 0.05);   // slider 100 = 0.1 gain
+  }
+}
+$('play').addEventListener('click', () => {
+  if (playing) { stopAudio(); $('play').textContent = 'Play'; }
+  else { startAudio(); if (playing) $('play').textContent = 'Stop'; }
+  document.body.classList.toggle('playing', playing);
+});
+
+// Starfield
+(function stars() {
+  const box = $('stars'), frag = document.createDocumentFragment();
+  for (let i = 0; i < 140; i++) {
+    const st = document.createElement('i'), size = Math.random() < 0.9 ? 1 + Math.random() : 2 + Math.random() * 1.2;
+    st.style.cssText = 'left:' + (Math.random() * 100) + '%;top:' + (Math.random() * 100) + '%;width:' + size + 'px;height:' + size + 'px;--o:' + (0.2 + Math.random() * 0.6).toFixed(2) + ';--d:' + (2 + Math.random() * 4).toFixed(1) + 's';
+    if (size > 2) st.style.boxShadow = '0 0 6px rgba(200,190,255,.8)';
+    if (Math.random() < 0.35) st.className = 'tw';
+    frag.appendChild(st);
+  }
+  box.appendChild(frag);
+})();
+drawGuides();
+if (!load()) {
+  // Starting stack: 10 Hz on 60 Hz, 5 Hz on 120 Hz, 2.5 Hz on 240 Hz
+  addNode(60, 10, 60, true);
+  addNode(120, 5, 50, true);
+  addNode(240, 2.5, 35, true);
+}
+if (!nodes.length) buildMixer();
+{ const on = nodes.filter(n => n.refOn); if (on.length > 1) setActiveRefs(on[on.length - 1]); }
+updateRings();
+</script>
+</body>
+</html>
