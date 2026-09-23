@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Binaural Beat Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  /* Everything eases slowly: the app should feel gentle */
+  --calm:1.1s cubic-bezier(.35,0,.25,1);
+  --calm-slow:1.6s cubic-bezier(.35,0,.25,1);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --void:#05040C;
+  --deep:#0B0920;
+  --glass:rgba(160,150,255,.055);
+  --glass-edge:rgba(190,180,255,.14);
+  --ink:#ECE8FF;
+  --muted:#9C97C8;
+  --faint:rgba(200,190,255,.10);
+  --aura:#B69CFF;
+  --tide:#5EE7F2;
+  --panel:#0B0920;
+  --line:rgba(200,190,255,.12);
+  --display:"Cormorant Garamond","Iowan Old Style",Georgia,serif;
+  --sans:"Outfit",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;background:var(--void)}
+body{
+  margin:0;min-height:100%;color:var(--ink);font-family:var(--sans);font-weight:300;font-size:16px;line-height:1.55;
+  background:
+    radial-gradient(ellipse 60% 45% at 18% 12%, rgba(120,70,220,.28), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 30%, rgba(40,170,200,.18), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 60% 95%, rgba(210,70,170,.16), transparent 70%),
+    var(--void);
+  background-attachment:fixed;
+}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+#stars i{position:absolute;border-radius:50%;background:#fff;opacity:var(--o)}
+body.playing #stars i.tw{animation:twinkle var(--d) ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:var(--o)}to{opacity:.05}}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:32px 22px 40px}
+header{display:flex;align-items:center;justify-content:flex-end;gap:20px;flex-wrap:wrap}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+h1{
+  font-family:var(--display);font-weight:300;font-size:clamp(2.2rem,4.5vw,3.3rem);line-height:1.05;margin:0;letter-spacing:.01em;
+  background:linear-gradient(100deg,#FFF6FB 5%,#E2D6FF 40%,#FFC9E3 70%,#BFF3F5 95%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 40px rgba(182,156,255,.25);
+}
+.hint{font-size:.9rem;color:var(--muted);margin:10px 0 0;max-width:64ch}
+.hint.warn{color:#FF9BB5}
+/* Under the field: one slot that shows Presets normally and the Curve slider while a reference
+   layer is active, with Play always at the right */
+.fieldbar{display:flex;align-items:center;gap:18px;margin-top:16px}
+.slot{flex:1;min-width:0;display:grid}
+.slot > *{grid-area:1 / 1;align-self:center}
+.preset-panel{display:flex;align-items:center;gap:14px;transition:opacity var(--calm-slow),visibility var(--calm-slow)}
+.preset-panel.away{opacity:0;visibility:hidden}
+.presets{position:relative}
+#presetBtn{padding:10px 20px}
+.preset-menu{
+  position:absolute;left:0;bottom:calc(100% + 10px);z-index:2000;width:300px;padding:8px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(28,22,60,.96),rgba(14,11,34,.96));border:1px solid var(--glass-edge);
+  box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 40px rgba(182,156,255,.12);backdrop-filter:blur(12px);
+}
+.preset-menu[hidden]{display:none}
+.preset-menu:not([hidden]){animation:menuIn .45s cubic-bezier(.2,.7,.2,1)}
+@keyframes menuIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.preset-menu{max-height:min(70vh,560px);overflow-y:auto;overscroll-behavior:contain}
+.pgroup{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:12px 12px 4px;opacity:.8}
+.pgroup:first-child{padding-top:6px}
+.preset{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;text-align:left;border:none;border-radius:10px;background:transparent;padding:10px 12px}
+.preset:hover,.preset:focus-visible{background:rgba(182,156,255,.12);outline:none}
+.pname{font-size:.95rem;font-weight:500;color:var(--ink)}
+.pmeta{font-size:.72rem;color:var(--muted);font-weight:300}
+.preset-status{font-size:.8rem;color:var(--muted)}
+.linkish{border:none;background:none;padding:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px;font-size:inherit;font-weight:500}
+button{font:inherit;font-weight:500;font-size:.95rem;padding:8px 18px;border-radius:999px;border:1px solid var(--glass-edge);background:var(--glass);color:var(--ink);cursor:pointer;transition:border-color .2s,box-shadow .2s}
+button:hover{border-color:rgba(200,190,255,.35)}
+button.primary{
+  min-width:120px;padding:11px 26px;border:none;color:#1E1640;font-weight:600;letter-spacing:.04em;
+  background:linear-gradient(120deg,#E4DBFF,#FFC9E3 50%,#BFF3F5);
+  box-shadow:0 0 24px rgba(228,219,255,.35),0 0 60px rgba(255,201,227,.18);
+}
+body.playing button.primary{animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{0%,100%{box-shadow:0 0 22px rgba(228,219,255,.35),0 0 50px rgba(255,201,227,.15)}50%{box-shadow:0 0 36px rgba(228,219,255,.6),0 0 90px rgba(191,243,245,.3)}}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--tide);outline-offset:3px}
+.body{display:flex;gap:26px;align-items:flex-start}
+/* The field and the mixer share one height: the field is square and the mixer's sliders stretch to match it */
+.pad-wrap{flex:1 1 520px;max-width:600px;min-width:0}
+.pad{
+  position:relative;width:100%;aspect-ratio:1/1;border-radius:18px;overflow:hidden;touch-action:none;cursor:default;user-select:none;-webkit-user-select:none;
+  background:
+    radial-gradient(circle at 50% 55%, rgba(120,90,255,.16), transparent 65%),
+    radial-gradient(circle at 20% 15%, rgba(94,231,242,.08), transparent 45%),
+    linear-gradient(180deg,#0E0B26,#07061A);
+  border:1px solid var(--glass-edge);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.6),0 0 40px rgba(120,90,255,.12);
+}
+.band{position:absolute;top:0;bottom:0;pointer-events:none}
+.band.edge{border-left:1px solid var(--faint)}
+.band span{position:absolute;bottom:8px;left:7px;font-size:.7rem;color:var(--muted);white-space:nowrap;letter-spacing:.06em;opacity:.8;transition:opacity var(--calm)}
+.aline{position:absolute;left:0;right:0;border-top:1px solid var(--faint);pointer-events:none}
+.aline span{position:absolute;right:8px;top:3px;font-size:.7rem;color:var(--muted);opacity:.8;letter-spacing:.03em;transition:opacity var(--calm)}
+/* Note labels step aside while a tone's reference lines are showing */
+.pad.refs-active .aline span,.pad.refs-active .band span{opacity:0}
+/* The whole default grid recedes while a reference layer is showing */
+.aline,.band.edge{transition:opacity var(--calm)}
+.pad.refs-active .aline,.pad.refs-active .band.edge{opacity:0}
+.band{transition:opacity var(--calm)}
+/* Sunburst through the tone being moved: long tapering arms along the axes (they fade out with
+   distance, like a lens flare) and shorter, fainter arms on the diagonals */
+.burst{position:absolute;width:0;height:0;pointer-events:none;z-index:3;display:none}
+.pad.live .burst,.pad.live .tag{display:block}
+.pad.live .burst{animation:burstIn .6s cubic-bezier(.2,.7,.2,1)}
+@keyframes burstIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+.burst i{position:absolute;left:0;top:0;transform:translate(-50%,-50%)}
+.burst .arm{
+  width:calc(var(--pw,480px) * 2);height:3px;
+  background:linear-gradient(90deg,transparent 0%,color-mix(in srgb,var(--c) 18%,transparent) 22%,color-mix(in srgb,var(--c) 55%,transparent) 42%,#FFFFFF 50%,color-mix(in srgb,var(--c) 55%,transparent) 58%,color-mix(in srgb,var(--c) 18%,transparent) 78%,transparent 100%);
+  clip-path:polygon(0 50%,50% 0,100% 50%,50% 100%);   /* spindle: thick at the center, needle-thin at the tips */
+}
+.burst .glow{
+  width:calc(var(--pw,480px) * 1.2);height:9px;filter:blur(3px);opacity:.45;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--c) 35%,transparent) 35%,color-mix(in srgb,var(--c) 80%,transparent) 50%,color-mix(in srgb,var(--c) 35%,transparent) 65%,transparent);
+  clip-path:polygon(0 50%,50% 0,100% 50%,50% 100%);
+}
+.burst .v{transform:translate(-50%,-50%) rotate(90deg)}
+.burst .d{width:calc(var(--pw,480px) * .42);height:4px;opacity:.6}
+.burst .d1{transform:translate(-50%,-50%) rotate(45deg)}
+.burst .d2{transform:translate(-50%,-50%) rotate(-45deg)}
+.burst .core{
+  width:90px;height:90px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(255,255,255,.55),color-mix(in srgb,var(--c) 30%,transparent) 45%,transparent 100%);
+}
+.tag{position:absolute;z-index:1000;display:none;pointer-events:none;font-size:.74rem;font-weight:600;line-height:1;padding:5px 9px;border-radius:999px;background:var(--c);color:var(--t);white-space:nowrap;box-shadow:0 0 14px var(--c)}
+.xtag{top:8px;transform:translateX(-50%)}
+.xtag.at-left{transform:translateX(0)}
+.xtag.at-right{transform:translateX(-100%)}
+.ytag{left:8px;transform:translateY(-50%)}
+.ytag.at-top{transform:translateY(0)}
+.ytag.at-bottom{transform:translateY(-100%)}
+.refs{position:absolute;inset:0;pointer-events:none;z-index:4;opacity:0;visibility:hidden;transition:opacity var(--calm),visibility var(--calm)}
+.refs.show{opacity:1;visibility:visible}
+.ref{position:absolute;left:0;right:0;height:0;opacity:.85}
+.ref.P8{border-top:1px solid var(--rc);box-shadow:0 0 6px var(--rc)}
+.ref.P5,.ref.M3{border-top:1px solid var(--rc)}
+.ref.m3{border-top:1px dashed var(--rc)}
+/* Small number tabs resting on each line: 8 octave, 5 fifth, 3 third. They sit above their line,
+   except the minor third's 3, which hangs below its line so the two thirds never collide. Each tab
+   is outlined in its line's own style and its base lies on the line, so the line runs straight through. */
+.ref span{
+  position:absolute;right:12px;bottom:0;width:1.9em;text-align:center;box-sizing:border-box;
+  font-size:.66rem;font-weight:600;line-height:1;padding:3px 0 3px;
+  background:rgba(8,6,24,.88);color:var(--rc);backdrop-filter:blur(4px);
+  border:1px solid var(--rc);border-radius:6px 6px 0 0;
+}
+.ref.m3 span{border-style:dashed}
+.ref.down span{bottom:auto;top:-1px;border-radius:0 0 6px 6px}
+.curve{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;overflow:visible;opacity:0;visibility:hidden;transition:opacity var(--calm-slow),visibility var(--calm-slow)}
+.curve.show{opacity:1;visibility:visible}
+.curve path{fill:none;stroke:var(--rc);stroke-width:1.5;vector-effect:non-scaling-stroke;opacity:.45;filter:drop-shadow(0 0 4px var(--rc))}
+.curve-panel{transition:opacity var(--calm-slow),visibility var(--calm-slow)}
+/* The curve controls only appear while a tone's reference layer is showing; their space stays
+   reserved so nothing below jumps */
+.curve-panel:not(.show){opacity:0;visibility:hidden}
+.curvebar{display:flex;align-items:center;gap:14px}
+.curvebar label{font-size:.8rem;letter-spacing:.03em;color:var(--ink)}
+.curve-ctl{flex:1;min-width:0}
+.curve-ctl input{width:100%;accent-color:#E4DBFF;margin:0}
+.curve-ticks{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-top:2px;letter-spacing:.04em}
+.ref .pt{position:absolute;top:0;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;
+  background:radial-gradient(closest-side,#fff 0%,var(--rc) 45%,color-mix(in srgb,var(--rc) 30%,transparent) 75%,transparent 100%);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--rc) 60%,transparent),0 0 10px var(--rc)}
+.ref.hit:not(.pthit) .pt{transform:none}
+.ref.hit .pt{transform:scale(1.5);box-shadow:0 0 0 1px var(--rc),0 0 16px var(--rc),0 0 30px var(--rc)}
+.ref.hit{opacity:1;border-top-width:2px;box-shadow:0 0 10px var(--rc),0 0 22px var(--rc)}
+.ref.hit span{background:var(--rc);color:var(--rt);box-shadow:0 0 14px var(--rc)}
+.node,.ch .n,.master .n{position:relative}
+.node .orb{position:absolute;inset:0;border-radius:50%}
+.node .num{position:relative;z-index:1}
+/* Orbs of light: a white-hot core that melts into pastel and fades to nothing, with no hard edge.
+   The halo is a separate, larger gradient layered over the core so the two blend seamlessly. */
+.node .orb,.ch .n,.master .n{
+  background:radial-gradient(closest-side,
+    #FFFFFF 0%,
+    #FFFFFF 16%,
+    color-mix(in srgb,var(--nc) 85%,#fff) 40%,
+    color-mix(in srgb,var(--nc) 55%,transparent) 68%,
+    color-mix(in srgb,var(--nc) 15%,transparent) 88%,
+    transparent 100%);
+  box-shadow:none;
+}
+.node .orb::before,.ch .n::before,.master .n::before{
+  content:"";position:absolute;inset:-34px;border-radius:50%;pointer-events:none;z-index:-1;
+  background:radial-gradient(closest-side,
+    transparent 0%,
+    color-mix(in srgb,var(--nc) 30%,transparent) 36%,
+    color-mix(in srgb,var(--nc) 14%,transparent) 62%,
+    color-mix(in srgb,var(--nc) 5%,transparent) 82%,
+    transparent 100%);
+}
+/* Lock / active ring: a soft band of light that fades out on both sides */
+.node::after,.ch .n::after{
+  content:"";position:absolute;inset:-9px;border-radius:50%;pointer-events:none;z-index:-1;opacity:0;transition:opacity var(--calm);
+  background:radial-gradient(closest-side,
+    transparent 64%,
+    color-mix(in srgb,var(--ring,var(--rc)) 55%,transparent) 80%,
+    color-mix(in srgb,var(--ring,var(--rc)) 20%,transparent) 90%,
+    transparent 100%);
+}
+.node.locked::after,.ch .n[aria-pressed="true"]::after{opacity:1}
+/* Line-locked tones get a thinner, fainter ring than point-locked ones */
+.node.locked.line-lock::after{
+  opacity:.6;
+  background:radial-gradient(closest-side,transparent 72%,color-mix(in srgb,var(--ring) 45%,transparent) 82%,transparent 92%);
+}
+.node{
+  /* --v is the tone's volume from 0 to 1. Quiet tones read as small, faint, far-off stars;
+     loud tones as large, bright, near ones. */
+  --v:.5;
+  --s:calc(20px + 40px * var(--v));
+  position:absolute;width:var(--s);height:var(--s);margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2);border-radius:50%;display:grid;place-items:center;
+  font-weight:600;font-size:calc(.56rem + .28rem * var(--v));cursor:grab;touch-action:none;color:var(--nt);
+  transition:width .2s,height .2s,margin .2s;
+}
+/* Volume dims and desaturates the light itself; rings on the node stay at full strength */
+.node .orb,.node .num{opacity:calc(.5 + .5 * var(--v));transition:opacity var(--calm),filter var(--calm)}
+.node .orb{filter:saturate(calc(.5 + .7 * var(--v)))}
+.node .orb::before{inset:-75%}
+.node::after{inset:calc(var(--s) * -.2)}
+.node.parent{--pr:color-mix(in srgb,var(--nc) 50%,#fff)}
+.node.parent::after{
+  /* Halfway between the tone's own color and white, brighter than a locked ring but not stark */
+  inset:calc(var(--s) * -.27);opacity:1;
+  background:radial-gradient(closest-side,transparent 60%,color-mix(in srgb,var(--pr) 78%,transparent) 77%,color-mix(in srgb,var(--pr) 28%,transparent) 88%,transparent 100%);
+}
+.node.muted .orb,.node.muted .num{opacity:.14}
+.node.oob .orb{opacity:.22}
+.node.oob::after{opacity:.55 !important}
+/* Small, quiet sunburst on the parent tone: four fine rays plus four shorter diagonals. */
+.node .flare{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:-1}
+/* Unlike the ring, the sunburst fades with the tone's volume (and nearly vanishes when muted) */
+.node .flare{opacity:0;transition:opacity var(--calm)}
+.node.parent .flare{opacity:calc(.2 + .8 * var(--v))}
+.node.parent.muted .flare{opacity:.12}
+.node .flare::before,.node .flare::after{
+  content:"";position:absolute;left:0;top:0;
+  width:calc(max(var(--s), 34px) * 3);height:2px;
+  transform:translate(-50%,-50%);
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--pr) 45%,transparent) 28%,var(--pr) 50%,color-mix(in srgb,var(--pr) 45%,transparent) 72%,transparent);
+  clip-path:polygon(0 50%,50% 0,100% 50%,50% 100%);
+  opacity:.8;
+}
+.node .flare::after{transform:translate(-50%,-50%) rotate(90deg)}
+.node .flare.x::before,.node .flare.x::after{width:calc(max(var(--s), 34px) * 1.8);height:1.5px;opacity:.55}
+.node .flare.x::before{transform:translate(-50%,-50%) rotate(45deg)}
+.node .flare.x::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.node.muted .orb{filter:grayscale(.85)}
+body.playing .node:not(.muted) .orb::before{animation:halo 5s ease-in-out infinite}
+body.playing .node:nth-of-type(odd):not(.muted) .orb::before{animation-duration:6.5s}
+@keyframes halo{0%,100%{opacity:.8}50%{opacity:1}}
+.pad.gliding .node{transition:left var(--calm-slow),top var(--calm-slow),width .2s,height .2s,margin .2s}
+.mixer.gliding .os .n{transition:top var(--calm-slow),left var(--calm-slow)}
+.mixer.gliding .os-fill{transition:height var(--calm-slow),width var(--calm-slow),opacity var(--calm)}
+.node.dragging{cursor:grabbing;z-index:200 !important}
+/* Keyboard focus only (not shown after mouse clicks) */
+.node:focus-visible{outline:1px dotted rgba(236,232,255,.7);outline-offset:6px}
+/* Mixer as a glass panel */
+.mixer{
+  display:flex;flex-direction:column;gap:18px;min-width:0;padding:18px 18px 16px;border-radius:18px;
+  background:linear-gradient(180deg,rgba(160,150,255,.07),rgba(160,150,255,.025));
+  border:1px solid var(--glass-edge);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.mixrow{display:flex;gap:8px;justify-content:space-between;flex:1;min-height:0}
+.noise-row{justify-content:space-around}
+.master{margin:0 0 6px}
+/* When a section's master is muted, its channels read as muted too (their own settings are kept) */
+.ch.parent-muted input[type=range],.ch.parent-muted .read{opacity:.35}
+.ch.parent-muted .n{background:transparent;color:var(--muted);border:1px dashed color-mix(in srgb,var(--nc) 45%,transparent)}
+.ch.parent-muted .n::before{opacity:0}
+/* Noise starfield inside the square */
+.sky{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.8}
+.ch{display:flex;flex-direction:column;align-items:center;gap:8px;width:72px;min-height:0}
+.ch .n,.master .n{
+  width:34px;height:34px;padding:0;border-radius:50%;border:none;font:inherit;font-size:.72rem;font-weight:600;display:grid;place-items:center;cursor:pointer;color:var(--nt);
+}
+.ch .n::before,.master .n::before{inset:-16px}
+.master .n::after{display:none}
+.ch .n::after{display:none}
+.ch .read{font-size:.7rem;color:var(--muted);text-align:center;line-height:1.4;white-space:nowrap}
+.ch button:not(.n){font-size:.72rem;padding:3px 10px;color:var(--muted)}
+.ch.group-start{border-left:1px solid var(--line);padding-left:10px;margin-left:2px}
+.ch.extra .n[aria-pressed="false"],.master .n[aria-pressed="false"]{background:transparent;color:var(--muted);border:1px dashed color-mix(in srgb,var(--cbg) 50%,transparent)}
+.ch.extra .n[aria-pressed="false"]::before,.master .n[aria-pressed="false"]::before{opacity:0}
+.ch.extra .n::after{display:none}   /* on/off channels show state by glowing, not with a ring */
+.ch.extra .read{color:var(--ink)}
+.master{display:flex;align-items:center;gap:12px}
+.master .n{flex:none}
+.master .mlabel{font-size:.8rem;color:var(--ink);white-space:nowrap;min-width:3.4em;letter-spacing:.03em}
+.master.off .pct,.master.off .mlabel{opacity:.4}
+.master .os{flex:1;min-width:90px}
+/* Orb sliders: the glowing orb is the thumb. Drag it to set the level; click it to mute. */
+.os{position:relative;touch-action:none;cursor:pointer;-webkit-user-select:none;user-select:none}
+.os:focus-visible{outline:1px dotted rgba(236,232,255,.7);outline-offset:4px}
+.os.vert{width:44px;flex:1;min-height:40px;margin:18px 0 14px}
+.os.horz{height:40px}
+.os-track{position:absolute;border-radius:2px;background:rgba(236,232,255,.1)}
+.os.vert .os-track{left:50%;top:0;bottom:0;width:5px;transform:translateX(-50%);clip-path:polygon(0 0,100% 0,60% 100%,40% 100%)}   /* tapers to a point at the bottom */
+.os.horz .os-track{top:50%;left:17px;right:17px;height:5px;transform:translateY(-50%);clip-path:polygon(0 40%,100% 0,100% 100%,0 60%)}   /* tapers toward the low end */
+.os-fill{position:absolute;border-radius:2px;transition:opacity var(--calm);box-shadow:0 0 8px color-mix(in srgb,var(--nc) 45%,transparent)}
+.os.vert .os-fill{left:0;right:0;bottom:0;background:linear-gradient(to top,color-mix(in srgb,var(--nc) 25%,transparent),var(--nc))}
+.os.horz .os-fill{top:0;bottom:0;left:0;background:linear-gradient(to right,color-mix(in srgb,var(--nc) 25%,transparent),var(--nc))}
+.os .n{position:absolute;transform:translate(-50%,-50%);cursor:grab}
+.os.dragging .n{cursor:grabbing}
+.os.vert .n{left:50%}
+.os.horz .n{top:50%}
+.master .os .n{width:30px;height:30px}
+.os.horz .os-track{left:15px;right:15px}
+.os.tone .n{--ts:calc(24px + 16px * var(--v,.5));width:var(--ts);height:var(--ts);font-size:calc(.6rem + .16rem * var(--v,.5))}
+.os .n{transition:background var(--calm),color var(--calm),border-color var(--calm)}
+.os .n::before{transition:opacity var(--calm)}
+.os .n.muted{background:transparent;color:var(--muted);border:1px dashed color-mix(in srgb,var(--nc) 55%,transparent)}
+.os .n.muted::before{opacity:0}
+.os.off .os-fill,.ch.parent-muted .os-fill{opacity:.22}
+.master .pct{font-size:.72rem;color:var(--muted);width:3em;text-align:right}
+.section{display:flex;flex-direction:column;gap:10px;min-height:0}
+.section.tones{flex:1.75 1 0}
+.section.noise{flex:1 1 0}
+.section + .section{border-top:1px solid var(--line);padding-top:16px}
+.mixer-empty{font-size:.88rem;color:var(--muted);padding-top:6px;max-width:15em}
+.appfoot{position:relative;display:flex;justify-content:flex-end;margin-top:26px}
+.help-btn{width:38px;height:38px;padding:0;border-radius:50%;font-family:var(--display);font-size:1.25rem;font-weight:400;color:var(--muted);display:grid;place-items:center;transition:color var(--calm),border-color var(--calm),box-shadow var(--calm)}
+.help-btn:hover,.help-btn[aria-expanded="true"]{color:var(--ink);box-shadow:0 0 18px rgba(228,219,255,.18)}
+.help-panel{
+  position:absolute;right:0;bottom:calc(100% + 12px);z-index:2000;width:min(560px,calc(100vw - 44px));max-height:min(72vh,640px);overflow-y:auto;
+  padding:22px 26px 18px;border-radius:18px;
+  background:linear-gradient(180deg,rgba(28,22,60,.97),rgba(14,11,34,.97));border:1px solid var(--glass-edge);
+  box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 40px rgba(182,156,255,.12);backdrop-filter:blur(12px);
+}
+.help-panel[hidden]{display:none}
+.help-panel:not([hidden]){animation:helpIn .6s cubic-bezier(.2,.7,.2,1)}
+@keyframes helpIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.help-panel h2{
+  font-family:var(--display);font-weight:300;font-size:1.9rem;line-height:1.1;margin:0 0 10px;
+  background:linear-gradient(100deg,#FFF6FB 5%,#E2D6FF 40%,#FFC9E3 70%,#BFF3F5 95%);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.help-panel h3{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;margin:16px 0 4px}
+.help-panel p{font-size:.86rem;color:var(--ink);opacity:.85;margin:0 0 8px;line-height:1.6}
+@media (max-width:680px){
+  /* Stacked layout: one glass panel holds everything, and the field sits inside it like a window */
+  .wrap{padding:0 0 24px}
+  .body{
+    flex-direction:column;gap:0;padding:14px 14px 16px;border-radius:0;
+    min-height:100vh;min-height:100dvh;
+    background:linear-gradient(180deg,rgba(160,150,255,.07),rgba(160,150,255,.025));
+    border:none;border-bottom:1px solid var(--glass-edge);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  }
+  /* Field first, then the mixer, then Presets / Curve and Play at the bottom */
+  .pad-wrap{display:contents}
+  .pad{order:1;align-self:stretch;border-radius:14px;flex:none}
+  .mixer{order:2;width:100%;height:auto !important;background:none;border:none;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;padding:18px 4px 2px;margin-top:18px;border-top:1px solid var(--line)}
+  .fieldbar{order:3;align-self:stretch;margin-top:18px;padding:16px 2px 0;border-top:1px solid var(--line)}
+  .appfoot{padding:0 14px}
+  .section.tones,.section.noise{flex:none}
+  .os.vert{flex:none;height:170px}
+  .section.noise .os.vert{height:100px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0s !important;animation-duration:0s !important}.pad.live .burst{animation:none}body.playing .node .orb::before,body.playing button.primary,body.playing #stars i.tw{animation:none}}
+</style>
+</head>
+<body>
+<div id="stars" aria-hidden="true"></div>
+<div class="wrap">
+  <h1 class="sr-only">Binaural Beat Designer</h1>
+  <div class="body">
+    <div class="pad-wrap">
+      <div class="pad" id="pad">
+        <canvas class="sky" id="sky" aria-hidden="true"></canvas>
+        <div class="burst" id="burst" aria-hidden="true">
+          <i class="glow h"></i><i class="glow v"></i>
+          <i class="arm h"></i><i class="arm v"></i>
+          <i class="arm d d1"></i><i class="arm d d2"></i>
+          <i class="core"></i>
+        </div>
+        <svg class="curve" id="curve" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
+        <span class="tag xtag" id="xtag"></span>
+        <span class="tag ytag" id="ytag"></span>
+      </div>
+      <div class="fieldbar">
+        <div class="slot">
+          <div class="preset-panel" id="presetPanel">
+            <div class="presets">
+              <button id="presetBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="presetMenu">Presets</button>
+              <div class="preset-menu" id="presetMenu" role="menu" hidden></div>
+            </div>
+            <div class="preset-status" id="presetStatus" aria-live="polite"></div>
+          </div>
+          <div class="curve-panel" id="curvePanel">
+            <div class="curvebar">
+              <label for="curveE">Curve</label>
+              <div class="curve-ctl">
+                <input type="range" id="curveE" min="-1" max="1" step="0.05" value="1">
+                <div class="curve-ticks"><span>Mirror</span><span>Even</span><span>Consonant</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="primary" id="play">Play</button>
+      </div>
+    </div>
+    <div class="mixer" id="mixer">
+      <div class="section tones">
+        <div id="toneMaster"></div>
+        <div class="mixrow" id="toneRow"></div>
+      </div>
+      <div class="section noise">
+        <div id="noiseMaster"></div>
+        <div class="mixrow noise-row" id="noiseRow"></div>
+      </div>
+    </div>
+  </div>
+  <div class="appfoot">
+    <button id="helpBtn" class="help-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="helpPanel" aria-label="About this app and how to use it">?</button>
+    <div class="help-panel" id="helpPanel" role="dialog" aria-labelledby="helpTitle" hidden>
+      <h2 id="helpTitle">Binaural Beat Designer</h2>
+      <p>Use headphones. Each tone plays its carrier in the left ear and the carrier plus its beat in the right ear; the difference is the binaural beat you perceive.</p>
+      <h3>Tones</h3>
+      <p>Drag a tone to tune it: left and right sets the beat, up and down sets the carrier. Each tone's orb also rides on its volume slider: drag it to set the level, click it to mute. Louder tones look nearer and brighter.</p>
+      <h3>Reference lines and the curve</h3>
+      <p>Click a tone to show its octaves (8), fifths (5) and thirds (3). Each line has a glowing point where it meets the curve. Tones you drag snap onto a point (pitch and beat) or onto a line (pitch only). Point-locked tones get a full ring and follow the parent in both directions; line-locked tones get a fainter ring, follow its pitch and keep their own beat.</p>
+      <p>The Curve slider under the field bends the curve. Consonant: beats rise with pitch and both ears hear the same chord, perfectly in tune. Even: every point shares the parent's beat, a gentle shimmer. Mirror: beats fall as pitch rises, the most tension. A locked tone whose point leaves the field waits at the edge, muted, until it comes back.</p>
+      <h3>Noise</h3>
+      <p>W, P and Br add white, pink and brown noise, which can play together; drag a channel's orb for its level, click it to switch it on or off. Their stars appear in the field: fine fast sparkles for white, a softer shimmer for pink, slow warm glows for brown.</p>
+      <h3>Levels and presets</h3>
+      <p>The Tone and Noise sliders set the overall listening level of each section without changing how anything looks; their orbs mute the whole section. Presets load a ready-made chord; after loading, move anything you like, since presets never change. Your settings are saved in this browser.</p>
+    </div>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const COLORS = [
+  { c: '#C9B8FF', t: '#1E1640', name: 'lavender' },
+  { c: '#A8F0D1', t: '#0E2A20', name: 'mint' },
+  { c: '#A6D2FF', t: '#0F2238', name: 'sky' },
+  { c: '#FFCBA8', t: '#3A1E0C', name: 'peach' },
+  { c: '#FFB3D1', t: '#3A1024', name: 'blush' }
+];
+// All five tones always exist. Starting stack:
+const DEFAULTS = [
+  { carrier: 60,  beat: 10,  vol: 60 },
+  { carrier: 120, beat: 5,   vol: 50 },
+  { carrier: 240, beat: 2.5, vol: 35 },
+  { carrier: 180, beat: 7.5, vol: 40 },
+  { carrier: 360, beat: 1.5, vol: 30 }
+];
+const BEAT_MIN = 0.5, BEAT_MAX = 30, CAR_MIN = 50, CAR_MAX = 500;
+const STORE = 'beat-designer-tones';
+const SNAP_PX = 10;     // how close (in pixels) a tone must come to a reference line to snap onto it
+const LOCK_TOL = 0.01;  // Hz tolerance for "sitting on" a reference line
+const pad = $('pad');
+let nodes = [], dragNode = null, liveTimer = null, snapHit = null, gliding = false;
+let ac = null, master = null, beatBus = null, noiseBus = null, beatVoices = new Map(), playing = false;
+const beatMaster = { on: true, vol: 100 };
+const noiseMaster = { on: true, vol: 100 };
+const NOISE_TYPES = [
+  { type: 'white', short: 'W',  label: 'White', bg: '#F3F1FF', fg: '#1E1A36' },
+  { type: 'pink',  short: 'P',  label: 'Pink',  bg: '#FFC9E3', fg: '#3A1024' },
+  { type: 'brown', short: 'Br', label: 'Brown', bg: '#E6C29A', fg: '#35200C' }
+];
+const noises = { white: { on: false, vol: 30 }, pink: { on: false, vol: 30 }, brown: { on: false, vol: 30 } };
+const noisePlay = {}, noiseBuffers = {};
+
+const snap = (v, st) => Math.round(v / st) * st;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const fxToBeat = fx => clamp(snap(BEAT_MIN + fx * (BEAT_MAX - BEAT_MIN), 0.5), BEAT_MIN, BEAT_MAX);
+const beatToFx = bt => (bt - BEAT_MIN) / (BEAT_MAX - BEAT_MIN);
+// Carrier uses a log scale so each octave takes the same height
+const fyToCar = fy => clamp(snap(CAR_MAX * Math.pow(CAR_MIN / CAR_MAX, fy), 5), CAR_MIN, CAR_MAX);
+const carToFy = cr => Math.log(cr / CAR_MAX) / Math.log(CAR_MIN / CAR_MAX);
+const fmt = v => (Math.round(v * 10) / 10).toString();
+
+// ---- Grid ----
+function drawGuides() {
+  const bands = [[0.5, 4, 'Delta'], [4, 8, 'Theta'], [8, 13, 'Alpha'], [13, 30, 'Beta']];
+  bands.forEach(([lo, hi, name]) => {
+    const d = document.createElement('div');
+    d.className = 'band' + (lo > BEAT_MIN ? ' edge' : '');
+    d.style.left = (beatToFx(lo) * 100) + '%';
+    d.innerHTML = '<span>' + name + '</span>';
+    pad.appendChild(d);
+  });
+  [[440, '440 Hz'], [220, '220 Hz'], [110, '110 Hz'], [55, '55 Hz']].forEach(([f, name]) => {
+    const d = document.createElement('div');
+    d.className = 'aline';
+    d.style.top = (carToFy(f) * 100) + '%';
+    d.innerHTML = '<span>' + name + '</span>';
+    pad.appendChild(d);
+  });
+}
+
+// ---- Live axis lines through the tone being moved ----
+function showLines(n) {
+  const col = COLORS[n.slot], fx = beatToFx(n.beat), fy = carToFy(n.carrier);
+  pad.style.setProperty('--c', col.c); pad.style.setProperty('--t', col.t);
+  $('burst').style.left = (fx * 100) + '%';
+  $('burst').style.top = (fy * 100) + '%';
+  const xt = $('xtag'), yt = $('ytag');
+  xt.textContent = fmt(n.beat) + ' Hz beat';
+  yt.textContent = fmt(n.carrier) + ' Hz';
+  xt.style.left = (fx * 100) + '%';
+  yt.style.top = (fy * 100) + '%';
+  xt.className = 'tag xtag' + (fx < 0.12 ? ' at-left' : fx > 0.88 ? ' at-right' : '');
+  yt.className = 'tag ytag' + (fy < 0.06 ? ' at-top' : fy > 0.94 ? ' at-bottom' : '');
+  pad.classList.add('live');
+}
+function hideLines() { pad.classList.remove('live'); }
+
+// ---- Interval reference lines (thirds, fifths, octaves of a tone's carrier) ----
+// Octaves, fifths and major thirds get solid lines; minor thirds get dashed lines
+const INTERVALS = [
+  { r: 5 / 4, name: 'maj third', key: 'M3', cls: 'third' },
+  { r: 6 / 5, name: 'min third', key: 'm3', cls: 'third' },
+  { r: 3 / 2, name: 'fifth',     key: 'P5', cls: 'fifth' },
+  { r: 1,     name: 'octave',    key: 'P8', cls: 'oct' }
+];
+function refList(carrier) {
+  const out = [];
+  for (let k = -4; k <= 4; k++) {
+    for (const iv of INTERVALS) {
+      if (iv.r === 1 && k === 0) continue;
+      const f = carrier * iv.r * Math.pow(2, k);
+      if (f < CAR_MIN - 0.01 || f > CAR_MAX + 0.01) continue;
+      out.push({ f, name: iv.name, key: iv.key, cls: iv.cls });
+    }
+  }
+  const seen = new Set();
+  return out.filter(r => { const k = r.f.toFixed(4); if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => b.f - a.f);
+}
+// ---- The curve ----
+// Points on the lines sit where a tone's beat follows   b = parentBeat × (c / parentCarrier)^e
+//   e =  1  Consonant: beat scales with pitch, both ears hear the same chord (in tune)
+//   e =  0  Even: every tone shares the parent's beat; the right ear drifts slightly
+//   e = -1  Mirror: beat runs against pitch, so the beats form an inverted chord; the right ear drifts most
+// Anything in between is allowed for experimenting.
+let CURVE_E = 1;
+function curveBeat(parent, f) { return parent.beat * Math.pow(f / parent.carrier, CURVE_E); }
+function inRange(b) { return b >= BEAT_MIN - 1e-9 && b <= BEAT_MAX + 1e-9; }
+function drawCurve() {
+  const svg = $('curve'), path = svg.querySelector('path');
+  const parent = nodes.find(n => n.refOn);
+  if (!parent) { svg.classList.remove('show'); return; }
+  svg.style.setProperty('--rc', COLORS[parent.slot].c);
+  const pts = [];
+  for (let i = 0; i <= 200; i++) {
+    const fy = i / 200, c = CAR_MAX * Math.pow(CAR_MIN / CAR_MAX, fy), b = curveBeat(parent, c);
+    pts.push(inRange(b) ? [beatToFx(b) * 1000, fy * 1000] : null);
+  }
+  let d = '', pen = false;
+  for (const p of pts) {
+    if (!p) { pen = false; continue; }
+    d += (pen ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' ';
+    pen = true;
+  }
+  path.setAttribute('d', d);
+  svg.classList.add('show');
+}
+// Worst right-ear drift (cents) among tones locked to the parent
+function lockedDrift(parent) {
+  let worst = 0;
+  for (const m of nodes) if (lockedTo(parent, m) && !m.oob)
+    worst = Math.max(worst, Math.abs(1200 * Math.log2((1 + m.beat / m.carrier) / (1 + parent.beat / parent.carrier))));
+  return worst;
+}
+function drawRefs(n) {
+  n.refEl.classList.toggle('show', n.refOn);
+  if (!n.refOn) { if (!nodes.some(m => m.refOn)) { drawCurve(); updateCurveNote(); } return; }
+  n.refEl.style.setProperty('--rc', COLORS[n.slot].c);
+  n.refEl.style.setProperty('--rt', COLORS[n.slot].t);
+  n.refEl.innerHTML = '';
+  refList(n.carrier).forEach(rf => {
+    const fy = carToFy(rf.f);
+    const d = document.createElement('div');
+    const isHit = snapHit && snapHit.slot === n.slot && Math.abs(snapHit.f - rf.f) < 1e-6;
+    const isPointHit = isHit && !snapHit.line;
+    // Minor third's tab hangs below its line; the others sit above. Tabs never move: near an edge,
+    // the field simply cuts off whatever part of a tab doesn't fit.
+    const down = rf.key === 'm3';
+    d.className = 'ref ' + rf.cls + ' ' + rf.key + (down ? ' down' : '') + (isHit ? ' hit' : '') + (isPointHit ? ' pthit' : '');
+    d.style.top = (fy * 100) + '%';
+    d.title = rf.name;
+    d.innerHTML = '<span>' + ({ P8: '8', P5: '5', M3: '3', m3: '3' })[rf.key] + '</span>';
+    // Point on this line where it meets the curve
+    const pb = curveBeat(n, rf.f);
+    if (inRange(pb)) {
+      const pt = document.createElement('i');
+      pt.className = 'pt';
+      pt.style.left = (beatToFx(pb) * 100) + '%';
+      d.appendChild(pt);
+    }
+    n.refEl.appendChild(d);
+  });
+  drawCurve(); updateCurveNote();
+}
+// Points from the active tone: each reference line's carrier, with the beat taken from the curve
+function activeRefs(except) {
+  const out = [];
+  for (const m of nodes) {
+    if (except.has(m) || !m.refOn) continue;
+    refList(m.carrier).forEach(r => {
+      const b = curveBeat(m, r.f);
+      if (inRange(b)) out.push({ f: r.f, b, name: r.name, slot: m.slot });
+    });
+  }
+  return out;
+}
+// Carrier for a vertical position: snaps onto a nearby reference line if one is showing,
+// otherwise to the usual 5 Hz steps
+// Position for a pointer: snaps onto a nearby ideal point in both directions,
+// otherwise to the usual 5 Hz carrier and 0.5 Hz beat steps
+const POINT_SNAP_PX = 14;
+function activeLines(except) {
+  const out = [];
+  for (const m of nodes) {
+    if (except.has(m) || !m.refOn) continue;
+    refList(m.carrier).forEach(r => out.push({ f: r.f, name: r.name, slot: m.slot, line: true }));
+  }
+  return out;
+}
+function pointFor(fx, fy, except) {
+  const r = pad.getBoundingClientRect(), w = r.width || 1, h = r.height || 1;
+  // 1. A nearby point wins: pitch and beat both snap
+  let best = null, bestPx = POINT_SNAP_PX;
+  for (const p of activeRefs(except)) {
+    const px = Math.hypot((beatToFx(p.b) - fx) * w, (carToFy(p.f) - fy) * h);
+    if (px <= bestPx) { best = p; bestPx = px; }
+  }
+  if (best) return { car: best.f, bt: best.b, hit: best };
+  // 2. Otherwise a nearby line catches the pitch only; the beat follows the usual steps
+  let line = null, linePx = SNAP_PX;
+  for (const l of activeLines(except)) {
+    const px = Math.abs(carToFy(l.f) - fy) * h;
+    if (px <= linePx) { line = l; linePx = px; }
+  }
+  if (line) return { car: line.f, bt: fxToBeat(fx), hit: line };
+  // 3. Otherwise the grid
+  return { car: fyToCar(fy), bt: fxToBeat(fx), hit: null };
+}
+function setSnap(hit) {
+  const same = (!hit && !snapHit) || (hit && snapHit && hit.slot === snapHit.slot && hit.f === snapHit.f && !!hit.line === !!snapHit.line);
+  snapHit = hit;
+  if (!same) nodes.forEach(drawRefs);
+}
+
+// ---- Active tone and locked tones ----
+// Only one tone shows its reference lines at a time. Tones sitting exactly on one of its points
+// are locked to it: they get a ring in its color and move with it in both directions, keeping
+// their place on the curve.
+function setActiveRefs(target) {
+  for (const m of nodes) { m.refOn = m === target; drawRefs(m); }
+  refreshLocks(); nodes.forEach(placeNode); save(); updateRings(); syncVoices(); updateCurveNote();
+}
+// A tone locks when it lands exactly on one of the parent's points. Once locked it stays locked
+// until you drag it away or the parent is deselected, even if the curve or the parent pushes its
+// point past the edge of the field: then it waits at the edge, muted, and comes back (and unmutes)
+// as soon as its point is inside the field again.
+function onLine(parent, child) {
+  return refList(parent.carrier).some(r => Math.abs(r.f - child.carrier) < LOCK_TOL);
+}
+function onPoint(parent, child) {
+  return refList(parent.carrier).some(r =>
+    Math.abs(r.f - child.carrier) < LOCK_TOL && Math.abs(curveBeat(parent, r.f) - child.beat) < LOCK_TOL);
+}
+function lockedTo(parent, child) {
+  return !!(parent.refOn && child !== parent && child.lock && child.lock.slot === parent.slot);
+}
+function refreshLocks() {
+  const parent = nodes.find(n => n.refOn);
+  for (const m of nodes) {
+    if (!parent || m === parent) { m.lock = null; m.oob = false; continue; }
+    if (m.lock && m.lock.slot === parent.slot && m !== dragNode) continue;   // locks persist
+    // Point lock: pitch and beat follow the curve. Line lock: pitch follows, the tone keeps its own beat.
+    m.lock = onPoint(parent, m) ? { slot: parent.slot, ratio: m.carrier / parent.carrier, type: 'point' }
+           : onLine(parent, m)  ? { slot: parent.slot, ratio: m.carrier / parent.carrier, type: 'line' } : null;
+    if (!m.lock) m.oob = false;
+  }
+}
+// Put a locked tone on its point, or park it at the edge (muted) if its point is out of range
+function applyIdeal(m, parent) {
+  const b = curveBeat(parent, m.carrier);
+  if (inRange(b)) { m.beat = b; m.oob = false; }
+  else { m.beat = clamp(b, BEAT_MIN, BEAT_MAX); m.oob = true; }
+  placeNode(m);
+}
+function beginGroup(n) {
+  n.groupSet = new Set([n]);
+  if (n.refOn) nodes.forEach(m => { if (lockedTo(n, m)) n.groupSet.add(m); });
+  else n.lock = null;   // dragging a locked tone detaches it; it locks again if you drop it on a point
+  n.group = [...n.groupSet].filter(m => m !== n).map(m => ({ m, ratio: m.lock ? m.lock.ratio : m.carrier / n.carrier }));
+  // Pitch: the group only moves as far as its highest and lowest tones allow.
+  // Beat: the parent moves freely; locked tones whose points leave the field wait at the edge, muted.
+  let lo = CAR_MIN, hi = CAR_MAX;
+  for (const g of n.group) { lo = Math.max(lo, CAR_MIN / g.ratio); hi = Math.min(hi, CAR_MAX / g.ratio); }
+  n.groupLo = lo; n.groupHi = hi; n.groupBlo = BEAT_MIN; n.groupBhi = BEAT_MAX;
+}
+function moveGroup(n, car, bt) {
+  n.carrier = clamp(car, n.groupLo, n.groupHi);
+  if (bt !== undefined) n.beat = clamp(bt, BEAT_MIN, BEAT_MAX);
+  for (const g of n.group) { g.m.carrier = n.carrier * g.ratio; if (g.m.lock && g.m.lock.type === 'line') placeNode(g.m); else applyIdeal(g.m, n); }
+}
+function updateRings() {
+  pad.classList.toggle('refs-active', nodes.some(n => n.refOn));
+  const refsOn = nodes.some(n => n.refOn);
+  $('curvePanel').classList.toggle('show', refsOn);
+  $('presetPanel').classList.toggle('away', refsOn);
+  if (refsOn && !$('presetMenu').hidden) { $('presetMenu').hidden = true; $('presetBtn').setAttribute('aria-expanded', 'false'); }
+  for (const n of nodes) {
+    const p = n.refOn ? n : nodes.find(q => lockedTo(q, n));
+    n.el.classList.toggle('locked', !!p);
+    n.el.classList.toggle('line-lock', !!(n.lock && n.lock.type === 'line' && p && p !== n));
+    n.el.classList.toggle('parent', !!n.refOn);
+    // The active (parent) tone gets a white ring; tones locked to it get a ring in its color
+    if (p) n.el.style.setProperty('--ring', p === n ? '#FFFFFF' : COLORS[p.slot].c);
+  }
+}
+
+// ---- Tones ----
+function label(n) { return 'Tone ' + (n.slot + 1) + ': carrier ' + fmt(n.carrier) + ' Hz, beat ' + fmt(n.beat) + ' Hz, volume ' + n.vol + (n.oob ? ', waiting at the edge (muted)' : n.muted || !beatMaster.on ? ', muted' : ''); }
+function placeNode(n) {
+  n.el.style.left = (beatToFx(n.beat) * 100) + '%';
+  n.el.style.top = (carToFy(n.carrier) * 100) + '%';
+  // Brightness follows the tone's own slider; the All tones level only affects sound, but its mute shows here
+  n.el.style.setProperty('--v', (n.vol / 100).toFixed(3));
+  n.el.classList.toggle('muted', !!n.muted || !!n.oob || !beatMaster.on);
+  n.el.classList.toggle('oob', !!n.oob);
+  n.el.setAttribute('aria-label', label(n) + '. Arrow keys move it. Enter shows its reference lines.');
+  n.el.title = label(n);
+  n.el.setAttribute('aria-pressed', !!n.refOn);
+  if (n.read) n.read.innerHTML = fmt(n.carrier) + ' Hz<br>' + fmt(n.beat) + ' Hz beat';
+  if (n.slider) n.slider.render();
+  if (dragNode === n) showLines(n);
+  drawRefs(n);
+}
+function makeNode(slot, carrier, beat, vol, muted, refOn) {
+  const col = COLORS[slot];
+  const n = { slot, carrier, beat, vol, muted: !!muted, refOn: !!refOn };
+  const el = document.createElement('div');
+  el.className = 'node'; el.tabIndex = 0;
+  el.innerHTML = '<span class="flare"></span><span class="flare x"></span><span class="orb"></span><span class="num">' + (slot + 1) + '</span>';
+  el.setAttribute('role', 'button');
+  el.style.setProperty('--nc', col.c); el.style.setProperty('--nt', col.t);
+  el.style.zIndex = 10 + slot;
+  el.addEventListener('pointerdown', e => { if (e.button !== undefined && e.button !== 0) return; e.preventDefault(); startDrag(n, e); });
+  el.addEventListener('keydown', e => {
+    const k = e.key;
+    if (k === 'Enter' || k === ' ') { e.preventDefault(); setActiveRefs(n.refOn ? null : n); placeNode(n); return; }
+    if (k === 'ArrowLeft' || k === 'ArrowRight') {
+      beginGroup(n);
+      const right = k === 'ArrowRight', b = n.beat;
+      moveGroup(n, n.carrier, right ? Math.floor(b / 0.5 + 1e-9) * 0.5 + 0.5 : Math.ceil(b / 0.5 - 1e-9) * 0.5 - 0.5);
+    }
+    else if (k === 'ArrowUp' || k === 'ArrowDown') {
+      beginGroup(n);
+      const up = k === 'ArrowUp', c = n.carrier;
+      let next = up ? Math.floor(c / 5 + 1e-9) * 5 + 5 : Math.ceil(c / 5 - 1e-9) * 5 - 5;   // next 5 Hz step
+      for (const l of activeLines(n.groupSet)) {       // ...or a reference line, if one is nearer
+        if (up && l.f > c + 1e-6 && l.f < next) next = l.f;
+        if (!up && l.f < c - 1e-6 && l.f > next) next = l.f;
+      }
+      moveGroup(n, next);
+    }
+    else return;
+    e.preventDefault(); placeNode(n); changed();
+    showLines(n); clearTimeout(liveTimer); liveTimer = setTimeout(() => { if (!dragNode) hideLines(); }, 900);
+  });
+  n.el = el;
+  n.refEl = document.createElement('div'); n.refEl.className = 'refs';
+  pad.appendChild(n.refEl);
+  pad.appendChild(el);
+  nodes.push(n);
+  return n;
+}
+
+// ---- Mixer ----
+// Orb slider: a track whose thumb is a glowing orb. Dragging sets the level; a click on the orb
+// without dragging calls onToggle (mute / on-off). Keyboard: arrows change the level, Enter or Space toggles.
+function orbSlider(o) {
+  const root = document.createElement('div');
+  root.className = 'os ' + (o.vertical ? 'vert' : 'horz') + (o.cls ? ' ' + o.cls : '');
+  root.tabIndex = 0; root.setAttribute('role', 'slider');
+  root.setAttribute('aria-valuemin', 0); root.setAttribute('aria-valuemax', 100);
+  root.style.setProperty('--nc', o.color); root.style.setProperty('--nt', o.textColor);
+  if (o.height) root.style.setProperty('--h', o.height + 'px');
+  const track = document.createElement('div'); track.className = 'os-track';
+  const fill = document.createElement('div'); fill.className = 'os-fill';
+  track.appendChild(fill);
+  const thumb = document.createElement('div'); thumb.className = 'n'; thumb.textContent = o.text;
+  root.append(track, thumb);
+  let value = o.value;
+  function render() {
+    const f = value / 100;
+    if (o.vertical) { thumb.style.top = ((1 - f) * 100) + '%'; fill.style.height = (f * 100) + '%'; }
+    else { thumb.style.left = 'calc(15px + (100% - 30px) * ' + f + ')'; fill.style.width = (f * 100) + '%'; }
+    root.style.setProperty('--v', f.toFixed(3));
+    const off = o.isOff();
+    thumb.classList.toggle('muted', off);
+    root.classList.toggle('off', off);
+    root.setAttribute('aria-valuenow', value);
+    root.setAttribute('aria-valuetext', value + '%' + (off ? ', ' + o.offWord : ''));
+    root.setAttribute('aria-label', o.label + '. Arrow keys set the level; Enter ' + o.toggleWord + '.');
+    thumb.title = 'Drag to set the level. Click to ' + (off ? o.onVerb : o.offVerb) + '.';
+  }
+  function valueAt(e) {
+    const r = track.getBoundingClientRect();
+    const f = o.vertical ? 1 - (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width;
+    return Math.round(clamp(f, 0, 1) * 100);
+  }
+  function set(v) { v = clamp(Math.round(v), 0, 100); if (v === value) return; value = v; render(); o.onInput(v); }
+  let drag = null;
+  root.addEventListener('pointerdown', e => {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    const onThumb = thumb.contains(e.target);
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, onThumb, moved: false, offset: onThumb ? valueAt(e) - value : 0 };
+    try { root.setPointerCapture(e.pointerId); } catch (err) {}
+    root.classList.add('dragging');
+    if (!onThumb) { drag.moved = true; set(valueAt(e)); }   // clicking the track jumps there
+  });
+  root.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 3) return;
+    drag.moved = true;
+    set(valueAt(e) - drag.offset);
+  });
+  const end = e => {
+    if (!drag) return;
+    const wasClick = drag.onThumb && !drag.moved;
+    drag = null; root.classList.remove('dragging');
+    if (wasClick) { o.onToggle(); render(); }
+  };
+  root.addEventListener('pointerup', end);
+  root.addEventListener('pointercancel', end);
+  root.addEventListener('keydown', e => {
+    const step = e.shiftKey ? 10 : 1;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') set(value + step);
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') set(value - step);
+    else if (e.key === 'Home') set(0);
+    else if (e.key === 'End') set(100);
+    else if (e.key === 'Enter' || e.key === ' ') { o.onToggle(); render(); }
+    else return;
+    e.preventDefault();
+  });
+  render();
+  return { el: root, render, setValue: v => { value = clamp(Math.round(v), 0, 100); render(); } };
+}
+
+function buildToneChannels() {
+  const row = $('toneRow');
+  nodes.forEach(n => {
+    const col = COLORS[n.slot];
+    const ch = document.createElement('div'); ch.className = 'ch';
+    const sl = orbSlider({
+      vertical: true, cls: 'tone', color: col.c, textColor: col.t, text: String(n.slot + 1), value: n.vol,
+      label: 'Tone ' + (n.slot + 1) + ' volume', offWord: 'muted', toggleWord: 'mutes or unmutes', offVerb: 'mute', onVerb: 'unmute',
+      isOff: () => n.muted || !!n.oob,
+      onInput: v => { n.vol = v; placeNode(n); changed(); },
+      onToggle: () => { n.muted = !n.muted; placeNode(n); changed(); }
+    });
+    const read = document.createElement('div'); read.className = 'read';
+    ch.append(sl.el, read);
+    n.read = read; n.ch = ch; n.slider = sl;
+    row.appendChild(ch);
+    placeNode(n);
+  });
+}
+const noiseChs = [];
+function buildNoiseChannels() {
+  const row = $('noiseRow');
+  NOISE_TYPES.forEach(nt => {
+    const st = noises[nt.type];
+    const ch = document.createElement('div'); ch.className = 'ch extra';
+    noiseChs.push(ch);
+    const sl = orbSlider({
+      vertical: true, color: nt.bg, textColor: nt.fg, text: nt.short, value: st.vol,
+      label: nt.label + ' noise volume', offWord: 'off', toggleWord: 'switches it on or off', offVerb: 'switch it off', onVerb: 'switch it on',
+      isOff: () => !st.on,
+      onInput: v => { st.vol = v; save(); syncNoise(); skyRefresh(); },
+      onToggle: () => { st.on = !st.on; save(); syncNoise(); skyRefresh(); }
+    });
+    const read = document.createElement('div'); read.className = 'read'; read.textContent = nt.label;
+    ch.append(sl.el, read);
+    row.appendChild(ch);
+  });
+}
+// Horizontal master slider that runs across the top of its section
+function buildMaster(holder, opts) {
+  const box = document.createElement('div'); box.className = 'master';
+  const pct = document.createElement('span'); pct.className = 'pct'; pct.textContent = opts.state.vol + '%';
+  const sl = orbSlider({
+    vertical: false, color: opts.bg, textColor: opts.fg, text: '', value: opts.state.vol,
+    label: opts.label + ' level', offWord: 'muted', toggleWord: 'mutes or unmutes the section', offVerb: 'mute ' + opts.label.toLowerCase(), onVerb: 'unmute ' + opts.label.toLowerCase(),
+    isOff: () => !opts.state.on,
+    onInput: v => { opts.state.vol = v; pct.textContent = v + '%'; save(); opts.sync(); },
+    onToggle: () => { opts.state.on = !opts.state.on; box.classList.toggle('off', !opts.state.on); save(); opts.sync(); opts.cascade(); }
+  });
+  box.classList.toggle('off', !opts.state.on);
+  const lab = document.createElement('span'); lab.className = 'mlabel'; lab.textContent = opts.short;
+  box.append(lab, sl.el, pct);
+  holder.appendChild(box);
+}
+
+// Master mute and level flow down to the channels and the orbs
+function cascadeTones() {
+  nodes.forEach(n => { if (n.ch) n.ch.classList.toggle('parent-muted', !beatMaster.on); placeNode(n); });
+}
+function cascadeNoise() {
+  noiseChs.forEach(ch => ch.classList.toggle('parent-muted', !noiseMaster.on));
+  skyRefresh();
+}
+
+// ---- Noise sky: twinkling stars in the square that follow each noise's character ----
+// White: many fine points, each flickering independently and fast (every frequency equally).
+// Pink:  fewer, softer stars whose shimmer mixes fast, medium and slow changes (1/f, like pink noise).
+// Brown: a handful of large, warm glows that swell and drift slowly (a random walk, like brown noise).
+// Star counts are set per area of the field (per 100 x 100 px at full level), so a bigger field
+// gets proportionally more stars instead of looking sparse.
+const SKY = {
+  white: { density: 14,  rMin: 0.9, rMax: 1.8, rgb: '236,240,255', sprite: null, glow: 0 },
+  pink:  { density: 6,   rMin: 1.0, rMax: 2.1, rgb: '255,201,227', sprite: null, glow: 3.5 },
+  brown: { density: 1.7, rMin: 2.4, rMax: 4.4, rgb: '230,194,154', sprite: null, glow: 5 }
+};
+function makeStar(spec) {
+  return {
+    x: Math.random(), y: Math.random(),
+    r: spec.rMin + Math.random() * (spec.rMax - spec.rMin),
+    rank: Math.random(),                 // lower ranks appear first as the level rises
+    a: Math.random(), p: [Math.random(), Math.random(), Math.random()]
+  };
+}
+// Grow or trim each layer to match the field's current area, keeping the stars already there
+function fitStars() {
+  const area = (skyW * skyH) / 10000;
+  for (const spec of Object.values(SKY)) {
+    const want = Math.round(spec.density * area);
+    while (spec.stars.length < want) spec.stars.push(makeStar(spec));
+    if (spec.stars.length > want) spec.stars.length = want;
+  }
+}
+const skyCanvas = $('sky'), skyCtx = skyCanvas.getContext('2d');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let skyW = 0, skyH = 0, skyRaf = null, skyLast = 0;
+for (const [type, spec] of Object.entries(SKY)) {
+  spec.stars = [];
+  // Soft glow sprite for the larger stars
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grd.addColorStop(0, 'rgba(255,255,255,1)');
+  grd.addColorStop(0.18, 'rgba(' + spec.rgb + ',0.9)');
+  grd.addColorStop(0.45, 'rgba(' + spec.rgb + ',0.25)');
+  grd.addColorStop(1, 'rgba(' + spec.rgb + ',0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 64, 64);
+  spec.sprite = c;
+}
+function noiseLevel(type) {
+  const st = noises[type];
+  return st.on && noiseMaster.on ? st.vol / 100 : 0;   // the All noise level only affects sound; its mute shows here
+}
+function skySize() {
+  const r = pad.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  skyW = r.width; skyH = r.height;
+  pad.style.setProperty('--pw', Math.max(r.width, r.height) + 'px');
+  $('mixer').style.height = r.height + 'px';   // mixer matches the field (overridden on narrow screens)
+  skyCanvas.width = Math.round(skyW * dpr); skyCanvas.height = Math.round(skyH * dpr);
+  skyCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  fitStars();
+  skyRefresh();
+}
+function skyStep(type, s, dt) {
+  if (type === 'white') {
+    if (Math.random() < dt * 14) s.a = Math.random();
+  } else if (type === 'pink') {
+    // Voss-style: three random sources refreshed at different rates, averaged
+    const rates = [6, 1.5, 0.35];
+    for (let i = 0; i < 3; i++) if (Math.random() < dt * rates[i]) s.p[i] = Math.random();
+    s.a = (s.p[0] + s.p[1] + s.p[2]) / 3;
+  } else {
+    s.a = clamp(s.a + (Math.random() - 0.5) * dt * 1.4, 0.08, 1);
+    s.x = (s.x + (Math.random() - 0.5) * dt * 0.01 + 1) % 1;
+    s.y = (s.y + (Math.random() - 0.5) * dt * 0.01 + 1) % 1;
+  }
+}
+function skyDraw(dt) {
+  skyCtx.clearRect(0, 0, skyW, skyH);
+  let any = false;
+  for (const type of ['brown', 'pink', 'white']) {
+    const spec = SKY[type], level = noiseLevel(type);
+    if (level <= 0) continue;
+    any = true;
+    const strength = 0.3 + 0.7 * level;
+    for (const s of spec.stars) {
+      if (s.rank > level) continue;
+      if (dt) skyStep(type, s, dt);
+      const alpha = Math.min(1, s.a * strength * (type === 'white' ? 0.8 : type === 'pink' ? 0.6 : 0.45));
+      const x = s.x * skyW, y = s.y * skyH;
+      skyCtx.globalAlpha = alpha;
+      if (spec.glow) {
+        const d = s.r * spec.glow * 2;
+        skyCtx.drawImage(spec.sprite, x - d / 2, y - d / 2, d, d);
+      } else {
+        skyCtx.fillStyle = 'rgb(' + spec.rgb + ')';
+        skyCtx.beginPath(); skyCtx.arc(x, y, s.r / 2, 0, Math.PI * 2); skyCtx.fill();
+      }
+    }
+  }
+  skyCtx.globalAlpha = 1;
+  return any;
+}
+function skyFrame(t) {
+  const dt = skyLast ? Math.min(0.1, (t - skyLast) / 1000) : 0;
+  skyLast = t;
+  const any = skyDraw(dt);
+  skyRaf = any && playing && !reduceMotion ? requestAnimationFrame(skyFrame) : null;
+  if (!skyRaf) skyLast = 0;
+}
+// Redraw now; keep animating only while playing and some noise is on
+function skyRefresh() {
+  if (skyRaf) return;
+  const any = skyDraw(0);
+  if (any && playing && !reduceMotion) skyRaf = requestAnimationFrame(skyFrame);
+}
+
+// ---- Dragging and clicking tones ----
+function posFromEvent(e) {
+  const r = pad.getBoundingClientRect();
+  return { fx: clamp((e.clientX - r.left) / r.width, 0, 1), fy: clamp((e.clientY - r.top) / r.height, 0, 1) };
+}
+function startDrag(n, e) {
+  dragNode = n; n.moved = false; n.el.classList.add('dragging');
+  beginGroup(n);
+  clearTimeout(liveTimer);
+  try { pad.setPointerCapture(e.pointerId); } catch (err) {}
+  showLines(n);
+}
+pad.addEventListener('pointermove', e => {
+  if (!dragNode) return;
+  const { fx, fy } = posFromEvent(e);
+  let { car, bt, hit } = pointFor(fx, fy, dragNode.groupSet);
+  const bc = clamp(car, dragNode.groupLo, dragNode.groupHi), bb = clamp(bt, dragNode.groupBlo, dragNode.groupBhi);
+  if (bc !== car || bb !== bt) { car = bc; bt = bb; hit = null; }
+  const snapChanged = (hit ? hit.slot + ':' + hit.f : '') !== (snapHit ? snapHit.slot + ':' + snapHit.f : '');
+  if (bt === dragNode.beat && car === dragNode.carrier && !snapChanged) return;
+  dragNode.moved = true;
+  if (snapChanged) setSnap(hit);
+  moveGroup(dragNode, car, bt); placeNode(dragNode); changed();
+});
+const endDrag = () => {
+  if (!dragNode) return;
+  const n = dragNode;
+  n.el.classList.remove('dragging'); dragNode = null; hideLines(); setSnap(null);
+  if (!n.moved) { setActiveRefs(n.refOn ? null : n); placeNode(n); }   // a click toggles its reference lines
+};
+pad.addEventListener('pointerup', endDrag);
+pad.addEventListener('pointercancel', endDrag);
+
+// ---- Saving in this browser ----
+function save() {
+  try {
+    localStorage.setItem(STORE, JSON.stringify({
+      tones: nodes.map(n => ({ s: n.slot, c: n.carrier, b: n.beat, v: n.vol, m: n.muted, r: n.refOn, lk: n.lock ? n.lock.ratio : null, lt: n.lock ? n.lock.type : null, o: !!n.oob })),
+      noises, beatMaster, noiseMaster, curve: CURVE_E
+    }));
+  } catch (e) {}
+}
+function load() {
+  let data = null;
+  try { data = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) {}
+  const saved = {};
+  const list = Array.isArray(data) ? data : (data && Array.isArray(data.tones) ? data.tones : []);
+  list.forEach((t, i) => {
+    const slot = Number.isInteger(t.s) ? t.s : i;
+    if (slot >= 0 && slot < 5 && typeof t.c === 'number' && typeof t.b === 'number' && !saved[slot]) saved[slot] = t;
+  });
+  let active = null;
+  for (let slot = 0; slot < 5; slot++) {
+    const t = saved[slot], d = DEFAULTS[slot];
+    const n = t
+      ? makeNode(slot, clamp(t.c, CAR_MIN, CAR_MAX), clamp(t.b, BEAT_MIN, BEAT_MAX), clamp(+t.v || 0, 0, 100), t.m, false)
+      : makeNode(slot, d.carrier, d.beat, d.vol, false, false);
+    if (t && t.r) active = n;
+  }
+  if (active) {
+    active.refOn = true;   // only one can be active
+    nodes.forEach(n => { const t = saved[n.slot]; if (t && n !== active && typeof t.lk === 'number') { n.lock = { slot: active.slot, ratio: t.lk, type: t.lt === 'line' ? 'line' : 'point' }; n.oob = !!t.o; } });
+  }
+  if (data && !Array.isArray(data)) {
+    if (data.noises) NOISE_TYPES.forEach(nt => {
+      const v = data.noises[nt.type];
+      if (v) { noises[nt.type].on = !!v.on; noises[nt.type].vol = clamp(+v.vol || 0, 0, 100); }
+    });
+    else if (data.noise && noises[data.noise.type]) {
+      noises[data.noise.type].on = !!data.noise.on; noises[data.noise.type].vol = clamp(+data.noise.vol || 0, 0, 100);
+    }
+    if (typeof data.curve === 'number') CURVE_E = clamp(data.curve, -1, 1);
+    for (const [key, obj] of [['beatMaster', beatMaster], ['noiseMaster', noiseMaster]]) {
+      if (data[key]) { obj.on = data[key].on !== false; obj.vol = clamp(+data[key].vol || 0, 0, 100); }
+    }
+  }
+}
+function changed() { refreshLocks(); save(); syncVoices(); updateRings(); updateCurveNote(); }
+function curveName(e) {
+  if (Math.abs(e - 1) < 1e-9) return 'Consonant';
+  if (Math.abs(e) < 1e-9) return 'Even';
+  if (Math.abs(e + 1) < 1e-9) return 'Mirror';
+  return e > 0 ? 'Between even and consonant' : 'Between mirror and even';
+}
+const CURVE_HELP = {
+  'Consonant': 'Beats rise with pitch, so both ears hear the same chord. Tones on these points are in tune.',
+  'Even': 'Every point shares the parent\'s beat. Gentle drift in the right ear, like a soft chorus.',
+  'Mirror': 'Beats fall as pitch rises, so the beats form an upside-down chord. The right ear drifts the most: tense, tidal.',
+  'Between even and consonant': 'Beats rise with pitch, but less than consonant. A little drift in the right ear.',
+  'Between mirror and even': 'Beats fall slowly as pitch rises. Noticeable drift in the right ear.'
+};
+function updateCurveNote() {
+  const note = $('curveNote'); if (!note) return;
+  const name = curveName(CURVE_E), parent = nodes.find(n => n.refOn);
+  let txt = name + ': ' + CURVE_HELP[name];
+  if (parent) {
+    const d = lockedDrift(parent);
+    const onPts = nodes.filter(m => lockedTo(parent, m) && m.lock.type === 'point').length;
+    const onLns = nodes.filter(m => lockedTo(parent, m) && m.lock.type === 'line').length;
+    if (onPts || onLns) {
+      const parts = [];
+      if (onPts) parts.push(onPts + ' on points');
+      if (onLns) parts.push(onLns + ' on lines (keeping their own beat)');
+      txt += ' Locked: ' + parts.join(', ') + '; right ear ' + (d < 0.5 ? 'in tune.' : 'within ' + Math.round(d) + ' cents.');
+    }
+    const parked = nodes.filter(m => m.oob).length;
+    if (parked) txt += ' ' + parked + (parked === 1 ? ' tone is' : ' tones are') + ' waiting at the edge, muted, until the curve brings ' + (parked === 1 ? 'it' : 'them') + ' back.';
+  } else txt += '';
+  note.textContent = txt;
+}
+function setCurve(e) {
+  // Tones locked on the old curve ride along to the new one (waiting at the edge if they run out of room)
+  const parent = nodes.find(n => n.refOn);
+  const riders = parent ? nodes.filter(m => lockedTo(parent, m) && m.lock.type === 'point') : [];   // line-locked tones keep their beat
+  CURVE_E = e;
+  if (+$('curveE').value !== e) $('curveE').value = e;
+  riders.forEach(m => applyIdeal(m, parent));
+  nodes.forEach(drawRefs);
+  changed();
+}
+$('curveE').addEventListener('input', e => {
+  let v = +e.target.value;
+  for (const d of [-1, 0, 1]) if (Math.abs(v - d) <= 0.06) v = d;   // gentle detents at Mirror, Even and Consonant
+  e.target.value = v;
+  setCurve(v);
+});
+
+// ---- Audio: each tone is a left/right sine pair (carrier, carrier + beat) ----
+function startAudio() {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    ac.resume();
+    master = ac.createGain();
+    const t = ac.currentTime;
+    master.gain.setValueAtTime(0, t);
+    master.gain.linearRampToValueAtTime(1, t + 3);   // a slow swell in
+    master.connect(ac.destination);
+    beatBus = ac.createGain(); beatBus.gain.value = beatMaster.on ? beatMaster.vol / 100 : 0; beatBus.connect(master);
+    noiseBus = ac.createGain(); noiseBus.gain.value = noiseMaster.on ? noiseMaster.vol / 100 : 0; noiseBus.connect(master);
+    playing = true;
+    syncVoices(); syncNoise();
+  } catch (e) { $('presetStatus').textContent = 'Audio could not start in this browser. Try desktop Chrome, Edge, Firefox or Safari.'; }
+}
+function stopAudio() {
+  if (!ac || !master) return;
+  const t = ac.currentTime, m = master;
+  m.gain.cancelScheduledValues(t);
+  m.gain.setValueAtTime(m.gain.value, t);
+  m.gain.linearRampToValueAtTime(0, t + 2.5);   // and a slow fade out
+  for (const v of beatVoices.values()) { v.l.stop(t + 2.6); v.r.stop(t + 2.6); }
+  beatVoices.clear();
+  for (const k of Object.keys(noisePlay)) { noisePlay[k].src.stop(t + 2.6); delete noisePlay[k]; }
+  setTimeout(() => { try { m.disconnect(); } catch (e) {} }, 2900);
+  master = null; beatBus = null; noiseBus = null; playing = false;
+}
+function syncVoices() {
+  if (!playing || !beatBus) return;
+  const t = ac.currentTime;
+  for (const n of nodes) {
+    let v = beatVoices.get(n.slot);
+    if (!v) {
+      const merger = ac.createChannelMerger(2), g = ac.createGain();
+      g.gain.value = 0;
+      const l = ac.createOscillator(), r = ac.createOscillator();
+      l.type = r.type = 'sine';
+      l.frequency.value = n.carrier; r.frequency.value = n.carrier + n.beat;
+      l.connect(merger, 0, 0); r.connect(merger, 0, 1);
+      merger.connect(g); g.connect(beatBus);
+      l.start(); r.start();
+      v = { l, r, g }; beatVoices.set(n.slot, v);
+    }
+    const glide = gliding ? 0.45 : 0.03;   // pitch follows a drag closely, but glides when a preset loads
+    v.l.frequency.setTargetAtTime(n.carrier, t, glide);
+    v.r.frequency.setTargetAtTime(n.carrier + n.beat, t, glide);
+    v.g.gain.setTargetAtTime(n.muted || n.oob ? 0 : n.vol / 1000, t, 0.25);   // mutes and level changes ease in and out   // slider 100 = 0.1 gain; mute keeps the slider value
+  }
+}
+function syncMaster() { if (beatBus) beatBus.gain.setTargetAtTime(beatMaster.on ? beatMaster.vol / 100 : 0, ac.currentTime, 0.3); }
+function syncNoiseMaster() { if (noiseBus) noiseBus.gain.setTargetAtTime(noiseMaster.on ? noiseMaster.vol / 100 : 0, ac.currentTime, 0.3); }
+
+// Looping stereo noise, generated separately for each ear, with a crossfaded loop point
+function makeNoise(type) {
+  const sr = ac.sampleRate, N = sr * 6, F = Math.floor(sr * 0.05);
+  const buf = ac.createBuffer(2, N, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const raw = new Float32Array(N + F);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, last = 0;
+    for (let i = 0; i < N + F; i++) {
+      const w = Math.random() * 2 - 1;
+      if (type === 'pink') {          // Paul Kellet's pink noise filter
+        b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759;
+        b2 = 0.96900 * b2 + w * 0.1538520; b3 = 0.86650 * b3 + w * 0.3104856;
+        b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
+        raw[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
+      } else if (type === 'brown') {  // leaky integrator
+        last = (last + 0.02 * w) / 1.02; raw[i] = last * 3.5;
+      } else raw[i] = w;
+    }
+    const out = buf.getChannelData(ch);
+    for (let i = 0; i < N; i++) out[i] = raw[i];
+    for (let i = 0; i < F; i++) { const k = i / F; out[i] = raw[i] * k + raw[N + i] * (1 - k); }
+  }
+  return buf;
+}
+function syncNoise() {
+  if (!playing || !noiseBus) return;
+  const t = ac.currentTime;
+  for (const nt of NOISE_TYPES) {
+    const st = noises[nt.type], want = st.on && st.vol > 0;
+    let cur = noisePlay[nt.type];
+    if (cur && !want) {
+      cur.g.gain.cancelScheduledValues(t); cur.g.gain.setValueAtTime(cur.g.gain.value, t);
+      cur.g.gain.linearRampToValueAtTime(0, t + 1.5); cur.src.stop(t + 1.6);
+      delete noisePlay[nt.type]; continue;
+    }
+    if (want && !cur) {
+      if (!noiseBuffers[nt.type]) noiseBuffers[nt.type] = makeNoise(nt.type);
+      const src = ac.createBufferSource(); src.buffer = noiseBuffers[nt.type]; src.loop = true;
+      const g = ac.createGain(); g.gain.setValueAtTime(0, t);
+      src.connect(g); g.connect(noiseBus); src.start();
+      cur = noisePlay[nt.type] = { src, g };
+    }
+    if (cur) cur.g.gain.setTargetAtTime((st.vol / 100) * 0.12, t, 0.35);   // slider 100 = 0.12 gain; noise fades in gently
+  }
+}
+$('play').addEventListener('click', () => {
+  if (playing) { stopAudio(); $('play').textContent = 'Play'; }
+  else { startAudio(); if (playing) $('play').textContent = 'Stop'; }
+  document.body.classList.toggle('playing', playing);
+  skyRefresh();
+});
+
+// ---- Starfield ----
+(function stars() {
+  const box = $('stars'), frag = document.createDocumentFragment();
+  for (let i = 0; i < 140; i++) {
+    const st = document.createElement('i'), size = Math.random() < 0.9 ? 1 + Math.random() : 2 + Math.random() * 1.2;
+    st.style.cssText = 'left:' + (Math.random() * 100) + '%;top:' + (Math.random() * 100) + '%;width:' + size + 'px;height:' + size + 'px;--o:' + (0.2 + Math.random() * 0.6).toFixed(2) + ';--d:' + (2 + Math.random() * 4).toFixed(1) + 's';
+    if (size > 2) st.style.boxShadow = '0 0 6px rgba(200,190,255,.8)';
+    if (Math.random() < 0.35) st.className = 'tw';
+    frag.appendChild(st);
+  }
+  box.appendChild(frag);
+})();
+
+// ---- Presets ----
+// Consonant and Colorful presets are just-intonation chords in which every tone's beat scales with its carrier
+// (beat / carrier is the same for all five), so the left ear and the right ear hear the same
+// chord and nothing drifts out of tune. All values sit exactly on the 5 Hz carrier and 0.5 Hz
+// beat grid (0 cents of error for Consonant, under 1 cent for Colorful). The Dissonant and loose
+// group bends these rules on purpose: tenser intervals, snapping error up to 7 cents, or beats that
+// don't scale, which lets the right ear drift against the left. Presets are fixed: loading one
+// copies it into the field, and anything you change afterwards never alters the preset.
+const PRESETS = [
+  { id: 'deep-rest', group: 'Consonant', name: 'Deep Rest', band: 'Delta', range: '1–4 Hz', chord: 'Open fifths and octaves on A', tones: [{ c: 110, b: 1.0, v: 70, m: false }, { c: 165, b: 1.5, v: 55, m: false }, { c: 220, b: 2.0, v: 45, m: false }, { c: 330, b: 3.0, v: 35, m: false }, { c: 440, b: 4.0, v: 25, m: false }] },
+  { id: 'drift', group: 'Consonant', name: 'Drift', band: 'Theta into alpha', range: '4–10 Hz', chord: 'Major chord', tones: [{ c: 120, b: 4.0, v: 65, m: false }, { c: 150, b: 5.0, v: 50, m: false }, { c: 180, b: 6.0, v: 50, m: false }, { c: 240, b: 8.0, v: 40, m: false }, { c: 300, b: 10.0, v: 30, m: false }] },
+  { id: 'twilight', group: 'Consonant', name: 'Twilight', band: 'Theta into alpha', range: '5–12 Hz', chord: 'Minor chord', tones: [{ c: 150, b: 5.0, v: 65, m: false }, { c: 180, b: 6.0, v: 50, m: false }, { c: 225, b: 7.5, v: 50, m: false }, { c: 300, b: 10.0, v: 40, m: false }, { c: 360, b: 12.0, v: 30, m: false }] },
+  { id: 'calm-focus', group: 'Consonant', name: 'Calm Focus', band: 'Alpha', range: '8–12 Hz', chord: 'Major triad, upper tones muted', tones: [{ c: 160, b: 8.0, v: 65, m: false }, { c: 200, b: 10.0, v: 50, m: false }, { c: 240, b: 12.0, v: 45, m: false }, { c: 320, b: 16.0, v: 30, m: true }, { c: 400, b: 20.0, v: 25, m: true }] },
+  { id: 'clear-mind', group: 'Consonant', name: 'Clear Mind', band: 'Low beta', range: '12–18 Hz', chord: 'Major triad, upper tones muted', tones: [{ c: 200, b: 12.0, v: 60, m: false }, { c: 250, b: 15.0, v: 50, m: false }, { c: 300, b: 18.0, v: 45, m: false }, { c: 400, b: 24.0, v: 30, m: true }, { c: 500, b: 30.0, v: 25, m: true }] },
+  { id: 'cascade', group: 'Consonant', name: 'Cascade', band: 'Delta through alpha', range: '1–8 Hz', chord: 'Octaves and a fifth from 60 Hz', tones: [{ c: 60, b: 1.0, v: 70, m: false }, { c: 90, b: 1.5, v: 50, m: false }, { c: 120, b: 2.0, v: 50, m: false }, { c: 240, b: 4.0, v: 40, m: false }, { c: 480, b: 8.0, v: 30, m: false }] },
+  { id: 'suspended', group: 'Colorful', name: 'Suspended', band: 'Theta', range: '3–6 Hz', chord: 'Sus2 and sus4 over one root, open and unresolved', tones: [{ c: 240, b: 3.0, v: 60, m: false }, { c: 270, b: 3.5, v: 45, m: false }, { c: 320, b: 4.0, v: 50, m: false }, { c: 360, b: 4.5, v: 50, m: false }, { c: 480, b: 6.0, v: 35, m: false }] },
+  { id: 'harmonic-seventh', group: 'Colorful', name: 'Harmonic Seventh', band: 'Theta into alpha', range: '6–13.5 Hz', chord: 'Natural 4:5:6:7:9 overtone chord', tones: [{ c: 120, b: 6.0, v: 65, m: false }, { c: 150, b: 7.5, v: 50, m: false }, { c: 180, b: 9.0, v: 50, m: false }, { c: 210, b: 10.5, v: 45, m: false }, { c: 270, b: 13.5, v: 30, m: false }] },
+  { id: 'minor-ninth', group: 'Colorful', name: 'Minor Ninth', band: 'Theta into alpha', range: '5–11 Hz', chord: 'Minor chord with a seventh and ninth', tones: [{ c: 200, b: 5.0, v: 65, m: false }, { c: 240, b: 6.0, v: 50, m: false }, { c: 300, b: 7.5, v: 50, m: false }, { c: 360, b: 9.0, v: 40, m: false }, { c: 450, b: 11.0, v: 30, m: false }] },
+  { id: 'unease', group: 'Dissonant and loose', name: 'Unease', band: 'Theta into alpha', range: '5–10 Hz', chord: '5:6:7:8:10, a soft tritone tension', tones: [{ c: 150, b: 5.0, v: 60, m: false }, { c: 180, b: 6.0, v: 50, m: false }, { c: 210, b: 7.0, v: 45, m: false }, { c: 240, b: 8.0, v: 45, m: false }, { c: 300, b: 10.0, v: 35, m: false }] },
+  { id: 'fourths', group: 'Dissonant and loose', name: 'Fourths', band: 'Theta', range: '3–9.5 Hz', chord: 'Stacked perfect fourths, hollow and open', tones: [{ c: 135, b: 3.0, v: 60, m: false }, { c: 180, b: 4.0, v: 50, m: false }, { c: 240, b: 5.0, v: 45, m: false }, { c: 320, b: 7.0, v: 40, m: false }, { c: 425, b: 9.5, v: 30, m: false }] },
+  { id: 'undertow', group: 'Dissonant and loose', name: 'Undertow', band: 'Delta to alpha', range: '2.5–10 Hz', chord: 'Fastest beats on the lowest tones; the right ear drifts up to 250 cents', tones: [{ c: 60, b: 10, v: 60, m: false }, { c: 90, b: 7.5, v: 45, m: false }, { c: 120, b: 5, v: 50, m: false }, { c: 180, b: 3.5, v: 40, m: false }, { c: 240, b: 2.5, v: 35, m: false }] },
+  { id: 'even-beats', group: 'Dissonant and loose', name: 'Even Beats', band: 'Theta', range: '6 Hz on every tone', chord: 'Major chord sharing one beat; the right ear drifts up to 50 cents', tones: [{ c: 120, b: 6, v: 60, m: false }, { c: 150, b: 6, v: 50, m: false }, { c: 180, b: 6, v: 50, m: false }, { c: 240, b: 6, v: 40, m: false }, { c: 300, b: 6, v: 30, m: false }] },
+  { id: 'drifting-apart', group: 'Dissonant and loose', name: 'Drifting Apart', band: 'Theta', range: '3–7 Hz', chord: 'Five tones 5 Hz apart near 200 Hz, wobbling against each other', tones: [{ c: 200, b: 3, v: 45, m: false }, { c: 205, b: 4, v: 45, m: false }, { c: 210, b: 5, v: 45, m: false }, { c: 215, b: 6, v: 45, m: false }, { c: 220, b: 7, v: 45, m: false }] }
+];
+let undoState = null, undoTimer = null, glideTimer = null;
+function snapshotTones() { return nodes.map(n => ({ c: n.carrier, b: n.beat, v: n.vol, m: n.muted })); }
+function applyTones(list) {
+  // Tones, sliders and pitches glide to the preset instead of jumping
+  gliding = true; pad.classList.add('gliding'); $('mixer').classList.add('gliding');
+  clearTimeout(glideTimer);
+  glideTimer = setTimeout(() => { gliding = false; pad.classList.remove('gliding'); $('mixer').classList.remove('gliding'); }, 1700);
+  setActiveRefs(null);
+  list.forEach((t, i) => {
+    const n = nodes[i];
+    n.carrier = t.c; n.beat = t.b; n.vol = t.v; n.muted = t.m;
+    n.slider.setValue(t.v);
+    placeNode(n);
+  });
+  changed();
+}
+function loadPreset(pr) {
+  undoState = snapshotTones();
+  applyTones(pr.tones);
+  const st = $('presetStatus');
+  st.innerHTML = '';
+  st.append('Loaded ' + pr.name + '. ');
+  const u = document.createElement('button'); u.className = 'linkish'; u.textContent = 'Undo';
+  u.addEventListener('click', () => { if (undoState) applyTones(undoState); undoState = null; st.textContent = ''; });
+  st.appendChild(u);
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { st.textContent = ''; undoState = null; }, 15000);
+}
+function buildPresetMenu() {
+  const btn = $('presetBtn'), menu = $('presetMenu');
+  let group = null;
+  PRESETS.forEach(pr => {
+    if (pr.group !== group) {
+      group = pr.group;
+      const h = document.createElement('div'); h.className = 'pgroup'; h.setAttribute('role', 'presentation'); h.textContent = group;
+      menu.appendChild(h);
+    }
+    const item = document.createElement('button');
+    item.className = 'preset'; item.setAttribute('role', 'menuitem');
+    item.innerHTML = '<span class="pname"></span><span class="pmeta"></span>';
+    item.querySelector('.pname').textContent = pr.name;
+    item.querySelector('.pmeta').textContent = pr.band + ' · ' + pr.range + ' · ' + pr.chord;
+    item.addEventListener('click', () => { loadPreset(pr); close(); btn.focus(); });
+    menu.appendChild(item);
+  });
+  const open = () => { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); menu.querySelector('.preset').focus(); };
+  const close = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+  btn.addEventListener('click', () => menu.hidden ? open() : close());
+  document.addEventListener('pointerdown', e => { if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) close(); });
+  menu.addEventListener('keydown', e => {
+    const items = [...menu.querySelectorAll('.preset')], i = items.indexOf(document.activeElement);
+    if (e.key === 'Escape') { close(); btn.focus(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  });
+}
+
+// ---- Help panel ----
+(function help() {
+  const btn = $('helpBtn'), panel = $('helpPanel');
+  const open = () => { panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); panel.focus({ preventScroll: true }); };
+  const close = () => { panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+  panel.tabIndex = -1;
+  btn.addEventListener('click', () => panel.hidden ? open() : close());
+  document.addEventListener('pointerdown', e => { if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !panel.hidden) { close(); btn.focus(); } });
+})();
+
+// ---- Start ----
+drawGuides();
+load();
+buildToneChannels();
+buildPresetMenu();
+$('curveE').value = CURVE_E;
+buildNoiseChannels();
+buildMaster($('toneMaster'), { short: 'Tone', label: 'All tones', bg: '#E4DBFF', fg: '#1E1640', state: beatMaster, sync: syncMaster, cascade: cascadeTones });
+buildMaster($('noiseMaster'), { short: 'Noise', label: 'All noise', bg: '#E4DBFF', fg: '#1E1640', state: noiseMaster, sync: syncNoiseMaster, cascade: cascadeNoise });
+cascadeTones(); cascadeNoise();
+new ResizeObserver(skySize).observe(pad);
+skySize();
+refreshLocks();
+nodes.forEach(placeNode);
+updateRings();
+updateCurveNote();
+</script>
+</body>
+</html>
