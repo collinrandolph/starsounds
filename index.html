@@ -97,11 +97,21 @@ button.primary{
 body.playing button.primary{animation:breathe 5s ease-in-out infinite}
 @keyframes breathe{0%,100%{box-shadow:0 0 22px rgba(228,219,255,.35),0 0 50px rgba(255,201,227,.15)}50%{box-shadow:0 0 36px rgba(228,219,255,.6),0 0 90px rgba(191,243,245,.3)}}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--tide);outline-offset:3px}
-.body{display:flex;gap:26px;align-items:flex-start}
-/* The field and the mixer share one height: the field is square and the mixer's sliders stretch to match it */
-.pad-wrap{flex:1 1 520px;max-width:600px;min-width:0}
+/* The field fills whatever space the window gives it, so its proportions follow the screen; the
+   axes are fractions of its width and height, and the guides re-space themselves to fit (layoutGuides).
+   The mixer sits beside it at its natural width and shares the field's row, so their tops and bottoms line up. */
+.body{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:minmax(440px,1fr) auto;column-gap:26px;
+  /* 440px is what the mixer needs for its sliders to stay usable; below that the page scrolls */
+  height:clamp(500px, calc(100vh - 210px), 860px);
+  height:clamp(500px, calc(100dvh - 210px), 860px);
+}
+.pad-wrap{display:contents}
+.pad{grid-area:1 / 1;min-height:0}
+.fieldbar{grid-area:2 / 1}
+.mixer{grid-area:1 / 2;min-height:0}
 .pad{
-  position:relative;width:100%;aspect-ratio:1/1;border-radius:18px;overflow:hidden;touch-action:none;cursor:default;user-select:none;-webkit-user-select:none;
+  position:relative;width:100%;height:100%;border-radius:18px;overflow:hidden;touch-action:none;cursor:default;user-select:none;-webkit-user-select:none;
   background:
     radial-gradient(circle at 50% 55%, rgba(120,90,255,.16), transparent 65%),
     radial-gradient(circle at 20% 15%, rgba(94,231,242,.08), transparent 45%),
@@ -114,6 +124,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .band span{position:absolute;bottom:8px;left:7px;font-size:.7rem;color:var(--muted);white-space:nowrap;letter-spacing:.06em;opacity:.8;transition:opacity var(--calm)}
 .aline{position:absolute;left:0;right:0;border-top:1px solid var(--faint);pointer-events:none}
 .aline span{position:absolute;right:8px;top:3px;font-size:.7rem;color:var(--muted);opacity:.8;letter-spacing:.03em;transition:opacity var(--calm)}
+.aline.up span{top:auto;bottom:3px}   /* near the bottom edge the label sits above its line */
+.aline.minor{border-top-style:dashed;opacity:.7}
+.aline.minor span{font-size:.62rem;opacity:.6}
+.aline.bare span{display:none}
 /* Note labels step aside while a tone's reference lines are showing */
 .pad.refs-active .aline span,.pad.refs-active .band span{opacity:0}
 /* The whole default grid recedes while a reference layer is showing */
@@ -363,27 +377,32 @@ body.playing .node:nth-of-type(odd):not(.muted) .orb::before{animation-duration:
 }
 .help-panel h3{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;margin:16px 0 4px}
 .help-panel p{font-size:.86rem;color:var(--ink);margin:0 0 8px;line-height:1.6}
-@media (max-width:680px){
+@media (max-width:860px){
   /* Stacked layout: everything fits on one screen. One glass panel holds the field (as a window)
-     and the mixer; the logo row with Presets and Play is fixed to the bottom of the screen. */
+     and the mixer; the logo row with Presets and Play is fixed to the bottom of the screen.
+     It starts at 860px because side by side, the mixer needs about 430px and the field about 360px.
+     On a very short screen the panel keeps a minimum height and the page scrolls, rather than
+     squeezing the sliders out of the panel. */
   :root{--bar:64px}
-  .wrap{padding:0}
+  .wrap{padding:0 0 calc(var(--bar) + env(safe-area-inset-bottom, 0px))}
   .body{
-    flex-direction:column;gap:0;padding:14px 14px 10px;border-radius:0;overflow:hidden;
-    height:calc(100vh - var(--bar) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-    height:calc(100dvh - var(--bar) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    display:flex;flex-direction:column;gap:0;padding:14px 14px 10px;border-radius:0;overflow:hidden;
+    height:max(540px, calc(100vh - var(--bar) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+    height:max(540px, calc(100dvh - var(--bar) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
     background:linear-gradient(180deg,rgba(160,150,255,.07),rgba(160,150,255,.025));
     border:none;   /* no backdrop blur here, so the Curve slider can sit in the fixed bottom bar */
   }
   .pad-wrap{display:contents}
-  /* The field shrinks with the screen height so the sliders still fit */
-  .pad{order:1;flex:none;align-self:center;width:min(100%, 37vh);width:min(100%, 37dvh);border-radius:14px}
-  .mixer{order:2;flex:1 1 auto;min-height:0;width:100%;height:auto !important;background:none;border:none;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;padding:14px 4px 0;margin-top:4px;gap:10px}
+  /* The field takes the full width and shares the height with the mixer, so it is only as tall
+     as the sliders can spare: roughly square on a phone, wider than tall on a tablet */
+  .pad{order:1;flex:1 1 0;min-height:170px;width:100%;height:auto;align-self:stretch;border-radius:14px}
+  .mixer{order:2;flex:1 1 0;min-height:330px;width:100%;height:auto !important;background:none;border:none;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;padding:14px 4px 0;margin-top:4px;gap:10px}
   .section{gap:6px}
   .section + .section{padding-top:10px}
   .os.vert{margin:14px 0 10px;min-height:36px}
   .section.tones{flex:1.5 1 0}
-  .ch{gap:4px}
+  .ch{gap:4px;flex:0 1 72px;min-width:0}   /* channels narrow on small phones instead of overflowing */
+  .mixrow{gap:4px}
   .ch .read{font-size:.64rem}
   /* Bottom bar */
   .topbar{
@@ -528,22 +547,48 @@ const carToFy = cr => Math.log(cr / CAR_MAX) / Math.log(CAR_MIN / CAR_MAX);
 const fmt = v => (Math.round(v * 10) / 10).toString();
 
 // ---- Grid ----
+// The field is not square: it takes whatever proportions the window gives it. Positions are
+// fractions of its width and height, so the axes stretch with it; layoutGuides then decides how
+// much labelling each axis has room for.
+const BANDS = [[0.5, 4, 'Delta', 'δ'], [4, 8, 'Theta', 'θ'], [8, 13, 'Alpha', 'α'], [13, 30, 'Beta', 'β']];
+const A_LINES = [440, 220, 110, 55];     // octaves of A, always drawn
+const E_LINES = [330, 165, 82.5];        // the fifths between them, drawn when the octaves are far enough apart
+let bandEls = [], lineEls = [];
 function drawGuides() {
-  const bands = [[0.5, 4, 'Delta'], [4, 8, 'Theta'], [8, 13, 'Alpha'], [13, 30, 'Beta']];
-  bands.forEach(([lo, hi, name]) => {
+  bandEls = BANDS.map(([lo, hi, name, short]) => {
     const d = document.createElement('div');
     d.className = 'band' + (lo > BEAT_MIN ? ' edge' : '');
     d.style.left = (beatToFx(lo) * 100) + '%';
-    d.innerHTML = '<span>' + name + '</span>';
+    d.innerHTML = '<span></span>';
     pad.appendChild(d);
+    return { el: d, span: d.firstChild, lo, hi, name, short };
   });
-  [[440, '440 Hz'], [220, '220 Hz'], [110, '110 Hz'], [55, '55 Hz']].forEach(([f, name]) => {
+  lineEls = [...A_LINES.map(f => [f, false]), ...E_LINES.map(f => [f, true])].map(([f, minor]) => {
     const d = document.createElement('div');
-    d.className = 'aline';
+    d.className = 'aline' + (minor ? ' minor' : '');
     d.style.top = (carToFy(f) * 100) + '%';
-    d.innerHTML = '<span>' + name + '</span>';
+    d.innerHTML = '<span>' + fmt(f) + ' Hz</span>';
     pad.appendChild(d);
+    return { el: d, f, minor };
   });
+}
+function layoutGuides(w, h) {
+  if (!w || !h) return;
+  // Beat bands: the fullest label that fits its band, from "Theta 4–8 Hz" down to "θ"
+  for (const b of bandEls) {
+    const room = (beatToFx(b.hi) - beatToFx(b.lo)) * w - 12;
+    const tries = [b.name + ' ' + fmt(b.lo) + '–' + fmt(b.hi) + ' Hz', b.name, b.short];
+    for (const t of tries) { b.span.textContent = t; if (b.span.offsetWidth <= room || t === b.short) break; }
+  }
+  // Carrier lines: the fifths join the octaves once an octave is tall enough to hold both labels,
+  // and on a very short field only the octave lines keep their labels
+  const octave = h / Math.log2(CAR_MAX / CAR_MIN);
+  for (const l of lineEls) {
+    const y = carToFy(l.f) * h;
+    l.el.hidden = l.minor && octave < 110;
+    l.el.classList.toggle('bare', octave < 34);
+    l.el.classList.toggle('up', h - y < 20);   // keep the label inside the field near the bottom edge
+  }
 }
 
 // ---- Live axis lines through the tone being moved ----
@@ -557,9 +602,11 @@ function showLines(n) {
   yt.textContent = fmt(n.carrier) + ' Hz';
   xt.style.left = (fx * 100) + '%';
   yt.style.top = (fy * 100) + '%';
-  xt.className = 'tag xtag' + (fx < 0.12 ? ' at-left' : fx > 0.88 ? ' at-right' : '');
-  yt.className = 'tag ytag' + (fy < 0.06 ? ' at-top' : fy > 0.94 ? ' at-bottom' : '');
   pad.classList.add('live');
+  // Tags turn inward near an edge; the margin is the tag's own size, since the field can be any shape
+  const px = fx * skyW, py = fy * skyH, hw = xt.offsetWidth / 2 + 8, hh = yt.offsetHeight / 2 + 8;
+  xt.className = 'tag xtag' + (px < hw ? ' at-left' : px > skyW - hw ? ' at-right' : '');
+  yt.className = 'tag ytag' + (py < hh ? ' at-top' : py > skyH - hh ? ' at-bottom' : '');
 }
 function hideLines() { pad.classList.remove('live'); }
 
@@ -1022,7 +1069,7 @@ function skySize() {
   const r = pad.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
   skyW = r.width; skyH = r.height;
   pad.style.setProperty('--pw', Math.max(r.width, r.height) + 'px');
-  $('mixer').style.height = r.height + 'px';   // mixer matches the field (overridden on narrow screens)
+  layoutGuides(skyW, skyH);
   skyCanvas.width = Math.round(skyW * dpr); skyCanvas.height = Math.round(skyH * dpr);
   skyCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   fitStars();
