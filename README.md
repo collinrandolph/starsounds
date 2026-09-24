@@ -27,6 +27,10 @@ Then visit http://localhost:8000.
 
 It also works as a GitHub Pages site. In the repository settings, go to **Pages**, choose to deploy from the `main` branch root, and the app will be served at `https://<your-username>.github.io/<repo-name>/`.
 
+### On a phone
+
+Open the page in Safari, tap **Share**, then **Add to Home Screen**. Opened from that icon, Starsounds runs full screen, without the browser's address bar and toolbar. No App Store or developer account is involved. A Home Screen app keeps its own saved settings, separate from the Safari tab's. On Android, Chrome offers **Install app** from its menu.
+
 ## Folder layout
 
 | Path | What it is |
@@ -35,6 +39,8 @@ It also works as a GitHub Pages site. In the repository settings, go to **Pages*
 | `experiments/point-lock-test.html` | Scratch copy of the point-lock and curve work |
 | `versions/` | Earlier snapshots: before and after the cosmic restyle, before curves, and before the final layout |
 | `assets/starsounds_logo.svg` | Logo |
+| `assets/icon*` | App icon: SVG favicon, and PNGs for the Home Screen (180) and the manifest (192, 512) |
+| `manifest.webmanifest` | Makes the page installable as a full-screen app |
 
 ## Notes
 
